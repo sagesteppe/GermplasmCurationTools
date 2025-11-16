@@ -31,20 +31,28 @@ Both tools are used to: - Prioritize the collection of a minimal number of colle
 
 ## Introduction Structure
 
-The Earth is undergoing a biodiversity crisis with estimates that around 45% of flowering plant species are at risk of extinction (@bachman2024extinct, @isbell2023expert).
-Responses to mitigate this loss of taxonomic and genetic diversity include both the preservation of germplasm *ex situ*, and the restoration of natural areas to enhance the preservation of germplasm *in situ*, and a combination thereof (@heywood2017plant, @volis2010quasi, @westwood2021botanic). 
-Long term *ex situ* conservation is well underway for species which have had, or are expected to have, their entire habitats removed, or the ecological integrity of which are deteriorating beneath thresholds which can support their populations (@mounce2017ex, @union2012integrated).
-Advances in restoration are allowing for the enhancement of degraded natural habitats, supporting the persistence of both relatively abundant, and species threatened with extinction; however the development of native plant propagules for restoration require the stages of collecting genetically representative material (Shriver et al. 2026, ...). 
-Hence both restoration and long term conservation rely on seed banks (Wambugu et al. 2023)
+1) General Background
+2) Most of sampling well determined from synthesized population genetics data and forestry
+3) space for improvements remain in most sectors as higlighted with the number of individuals, populations etc. 
+4) spatial tools can help provide a measurable framework for achieving collection goals. 
+5) Here we present such tools. 
 
-A wide number of Biobanks have been developed  (@hay2013advances)... Taking forms from seed banks, living collections, to living meta-collections, however each of these approaches relies fundamentally on the preservation of the species genetic diversity (@westwood2021botanic, @walters2021unique).
-Currently implemented approaches include... 
-... Each approach is likely to have it's own merit depending on the goals of institutions, the programmes they manage, and the curators whom manage the program, but we suspect that most methods have similar efficiencies and are complementary (@guerrant2014sampling).
+The Earth is undergoing a biodiversity crisis and current estimates suggest that cerca 45% of flowering plant species are at risk of extinction (@bachman2024extinct, @isbell2023expert).
+Two major recent responses to mitigate this loss of taxonomic and genetic diversity include the preservation of plant genetic materials (hereafter germplasm) *ex situ*, the restoration of natural areas to enhance the preservation of germplasm *in situ*, and combinations thereof (@heywood2017plant, @volis2010quasi, @westwood2021botanic). 
+Long term *ex situ* conservation is underway for species which have had, or are expected to undergo, the entire loss of their habitats, or a deterioration in the ecological integrity of their habitats beneath thresholds which can support their populations (@mounce2017ex, @union2012integrated, @TADDEO).
+Advances in restoration are allowing for the enhancement of degraded natural habitats, supporting the persistence of both relatively abundant, and species threatened with extinction; however the development of native plant propagules for restoration require the stages of collecting genetically representative material (Shriver et al. 2026). 
+Hence both restoration and long term conservation rely on the collection, and storage of germplasm materials for some length of time (@wambugu2023role). 
+
+A wide number of germplasm repositories have been developed including seed banks, and now living collections of taxa which cannot be effectively seed banked (@hay2013advances, @westwood2021botanic). 
+The successful implementation of all of these approaches relies on gathering adequate genetic diversity for the conservation of the species (@walters2021unique). 
+Currently, guidance exists for the minimum number of individuals which need to be sampled per population to reach allelic diversity goals, the number of populations to sample per species, and amounts of material that can be collected to safeguard the persistence of the natural population; however these guidelines are not guranteed to align with empirical results  (@bucharova2025assessing, @hofner2025spatial, ). 
+... Each approach is likely to have it's own merit depending on the goals of institutions, the programmes they manage, and the curators whom manage the program, but we suspect that most methods have similar efficencies and are complementary (@guerrant2014sampling).
 
 ... However tooling and integration required to prioritize targets, reduce the possibility of duplicated efforts, and use funding for field operations most effectively (... ... A variety of systems for collection of materials have been proposed formally in the literature, or are in use (@havens2015seed, @hoban2020taxonomic, ) ...
 Tools for sampling can help design collection goals and priorities (@wambugu2023role)... Here two tools are detailed, one for biobank curators to help maximize their coverage of a species allelic diversity `safeHavens` and a second to assist quantitative geneticists to produce easily usable empirical seed transfer zone products.
 In this manuscript we provide a quick overview of both software packages, describing core functionality.
 
-We further make comparisons to show when/ where the methods for general collections vary, by 1) Describing the structure of XXX biorepository collections relative to the sampling scenarios. 
+We further make comparisons to show when / where the methods for general collections vary, 
+by 1) Describing the structure of XXX biorepository collections relative to the sampling scenarios. 
 2) For both common and rare taxa determining how well neutral genetic variation would represented under the various sampling criteria.
 3) For common taxa, comparing how well each of various sampling schema would cover the identified adaptive variation documented via empirical seed transfer zones.
