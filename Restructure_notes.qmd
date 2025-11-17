@@ -1,6 +1,6 @@
 ---
 title: "Manuscript Restructuring Notes"
-format: html
+format: pdf
 editor: visual
 ---
 
@@ -9,12 +9,6 @@ editor: visual
 RCB, Brianna Wieferich, Chris Woolridge?, Jeremy Foster?, Jeremie Fant?
 
 ## Overview
-
-Consider both eSTZwriter (EW) and safeHavens (sfH) as a continuum. EW for non-empirically developed strategies for bio-banking. sfH as a software used for developing empirical seed zones. POSSIBLY new functionality for EW to select eSTZs for collection prioritization.
-
-Both tools are used to: - Prioritize the collection of a minimal number of collections to meet conservation and/or restoration targets. 
-- sfH focuses on neutral genetic variation - Purely computational approach, using pre-existing data sets.
-- EW on adaptive genetic variation - Common garden based approach to infer adaptive patterns for restoration across time points
 
 ## Software todo - safeHavens
 
@@ -31,34 +25,27 @@ Both tools are used to: - Prioritize the collection of a minimal number of colle
 
 ## Introduction Structure
 
-1) General Background
-2) Most of sampling well determined from synthesized population genetics data and forestry
-3) space for improvements remain in most sectors as higlighted with the number of individuals, populations etc. 
-4) spatial tools can help provide a measurable framework for achieving collection goals. 
-5) Here we present such tools. 
+The Earth is experiencing a mass extinction event with estimates suggesting 45% of flowering plant species are at risk of extinction (@bachman2024extinct, @isbell2023expert).
+Two recent responses to mitigate this loss of taxonomic and genetic diversity include the preservation of plant genetic materials (hereafter germplasm) in *ex situ* collections, and the restoration of natural areas to enhance the preservation of populations *in situ* (@heywood2017plant, @volis2010quasi, @westwood2021botanic). 
+Long-term *ex situ* conservation is used when a species has, or is expected to experience, the loss or degradation of their habitat beneath thresholds that can support the species persistence in the wild (@mounce2017ex, @union2012integrated, @TADDEO).
+Ecological restoration has become a tool to enhance the habitat quality in natural areas, or to convert land back to natural areas to provide connectivity between higher quality parcels, helping to preserve plant and other biodiversity *in situ*.
+However, analogously to *ex situ* conservation - albeit on a different time scale, the development of native plant propagules for ecological restoration requires the collection, and human amplification of germplasm to the required amounts off site (SHRIVER et al. 2026, @wambugu2023role). 
 
-The Earth is currently experiencing a mass extinction event with estimates suggesting that 45% of flowering plant species are at risk of extinction (@bachman2024extinct, @isbell2023expert).
-Two major recent responses to mitigate the loss of taxonomic and genetic diversity include the preservation of plant genetic materials (hereafter germplasm) *ex situ*, the restoration of natural areas to enhance the preservation of germplasm *in situ*, and combinations thereof (@heywood2017plant, @volis2010quasi, @westwood2021botanic). 
-Long-term *ex situ* conservation is underway for species that have had, or are expected to experience, the entire loss of their habitats, or a deterioration in the ecological integrity of their habitats beneath thresholds that can support their populations continued persistence (@mounce2017ex, @union2012integrated, @TADDEO).
-Recent advances in restoration allow for the enhancement of degraded natural habitats, supporting the persistence of both relatively abundant species and species threatened with extinction; however, the development of native plant propagules for restoration requires the collection, and on farm amplification of genetically representative material (SHRIVER et al. 2026). 
-Hence, both major responses require effective sampling of germplasm across geographic and environmental conditions (@wambugu2023role). 
+Central to attaining meaningful germplasm collections is the acquisition of adequate amounts of genetic diversity for the conservation of a species for *ex situ* or of populations or groups of populations for restoration (@walters2021unique, @SHRIVER). 
+Approaches for collecting germplasm from wild species for *ex situ* conservation and *in situ* restoration projects in use by the nearly 1750 seed banks globally often follows a set of minimal rule-of-thumb guidelines developed from agricultural and population genetics studies (@hay2013advances, @westwood2021botanic). 
+Currently, guidance exists for the number of propagules that can be collected to safeguard the persistence of natural population (i.e. avoid over-harvesting), the minimum number of individuals that need to be sampled per population, the number of populations to sample per species to reach genetic diversity targets, and guidance on the geographic structure of where to move restoration collections to and from to avoid using maladapted phenotypes at a restoration site (@CITE, @CITE, @CITE).
+However, a variety of goals exist at the institutional, programmatic, and bio-regional organizational levels, as well as opinions among curators, which have fostered tailored strategies beyond the rule-of-thumb guidelines (@guerrant2014sampling).
+Further, these minimal guidelines do not guarantee alignment or achievement of goals for all observed species and population genetic structures, or population vital rates, because of nuances in the biology and ecology of individual species (@bucharova2025assessing, @hofner2025spatial). 
 
-Approaches for collecting germplasm from wild species for *ex situ* conservation and *in situ* restoration projects often follow a set of minimal rule-of-thumb guidelines, developed from agricultural and population genetics studies, and are in use by a great number of 1750 seed banks globally (@hay2013advances, @westwood2021botanic). 
+However the germplasm collections desired for *ex situ* conservation and ecological restoration differ in a key attribute. 
+*Ex situ* germplasm collections aim to maximize coverage of neutral genetic variation, the material which allows evolution a wide array of phenotypes to act upon, following the logic that no set of phenotypes are universally most fit. 
+Restoration collections, on the other hand, seek to maximize chances of restoration success at sites in a defined focal area and time, and seeks to identify populations with the highest chance of doing so, while maintaining some allelic diversity for at site selection to occur.   
 
-Central to attaining germplasm collection goals is the collection of adequate amounts of genetic diversity for the conservation of a species for *ex situ* or of populations or groups of populations for restoration (@walters2021unique, @SHRIVER). 
+Here we present two software tools to help curators refine and implement their collection goals, using free and open source software (FOSS). 
+The first tool `safeHavens`, global in coverage, aims to maximize the putative coverage of neutral genetic variation across a species range using proxies: 1) geographic, 2) ecoregional, 3) environmental coverage of `ex situ` and restorations collections in areas lacking defined seed transfer zones, or where seed zones transfer zones may not align with the goals of restoration collections.
+The second tool, tailored to the Western United States, `eSTZwriter` assists quantitative geneticists in producing standardized spatial data products describing areas for targeted seed collection and restoration planting which may be readily used by curators.  
 
-However, a variety of goals exist at the institutional, programmatic, and bio-regional organizational levels, as well as opinions among curators, which have allowed for a natural evolution of collection goals above minimal rule-of-thumb guidelines (@guerrant2014sampling).
-
-Currently, guidance exists for the number of propagules that can be collected to safeguard the persistence of natural populations, the minimum number of individuals that need to be sampled per population, the number of populations to sample per species to reach genetic diversity targets, and guidance on the geographic structure of where to move restoration collections to and from to avoid using ma-adapted phenotypes at the restoration site (@CITE, @CITE, @CITE).
-
-However, these minimal guidelines do not guarantee alignment with the observed species and population genetic structures, or population vital rates, because of the nuances biology and ecology of individual species (@bucharova2025assessing, @hofner2025spatial). 
-
-
-
-... However tooling and integration required to prioritize targets, reduce the possibility of duplicated efforts, and use funding for field operations most effectively (... ... A variety of systems for collection of materials have been proposed formally in the literature, or are in use (@havens2015seed, @hoban2020taxonomic, ) ...
-Tools for sampling can help design collection goals and priorities (@wambugu2023role)... 
-Here two tools are detailed, one for biobank curators to help maximize their coverage of a species allelic diversity `safeHavens` and a second to assist quantitative geneticists to produce easily usable empirical seed transfer zone products.
-In this manuscript we provide a quick overview of both software packages, describing core functionality.
+ (@havens2015seed, @hoban2020taxonomic, ) ...
 
 We further make comparisons to show when / where the methods for general collections vary, 
 by 1) Describing the structure of XXX biorepository collections relative to the sampling scenarios. 
