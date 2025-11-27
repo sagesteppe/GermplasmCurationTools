@@ -1,0 +1,23 @@
+---
+title: "Simulation Analyses"
+format: html
+---
+
+
+```{python}
+#import geopandas as gpd
+import pandas as pd
+import os
+
+pip install pandas
+```
+
+
+```{python}
+os.chwd(
+    os.path.join('~', 'Documents', 'Manuscripts', 'GermplasmCurationTools', 'scripts'))
+
+ca_popgen = read_file(
+    os.path.join('..', 'data', 'CaliPopGen_dataset_1_population_genetic_diversity_TSV.tsv')
+)
+```
