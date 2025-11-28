@@ -240,9 +240,55 @@ greedy_initialize <- function(dist_matrix, n_sites, seeds = integer(0), objectiv
   as.integer(selected)
 }
 
+# Variance-penalized sum objective
+calc_objective_sum_var <- function(dist_mat, selected, lambda_var = 0.1) {
+  n <- length(selected)
+  if(n < 2) return(0)
+  
+  # extract lower-tri pairwise distances
+  dists <- dist_mat[selected, selected]
+  dists <- dists[lower.tri(dists)]
+  
+  # base dispersion
+  obj_disp <- sum(dists)
+  
+  # penalty for uneven spacing
+  obj_var <- -var(dists)
+  
+  return(obj_disp + lambda_var * obj_var)
+}
+
+# Wrapper for greedy initialization using new objective
+greedy_initialize_var <- function(dist_matrix, n_sites, seeds, lambda_var = 0.1) {
+  n_total <- nrow(dist_matrix)
+  selected <- seeds
+  candidates <- setdiff(1:n_total, seeds)
+  
+  while(length(selected) < n_sites && length(candidates) > 0) {
+    best_site <- NULL
+    best_obj <- -Inf
+    
+    for(site in candidates) {
+      test_selected <- c(selected, site)
+      obj <- calc_objective_sum_var(dist_matrix, test_selected, lambda_var = 0.1)
+      if(obj > best_obj) {
+        best_obj <- obj
+        best_site <- site
+      }
+    }
+    
+    selected <- c(selected, best_site)
+    candidates <- setdiff(candidates, best_site)
+  }
+  
+  return(as.integer(selected))
+}
+
+
 # Optimiation function
 maximize_dispersion_robust <- function(
   input_data,
+  lambda_var = 0.15,
   n_sites = 5,
   weight_1 = 1.0,
   weight_2 = 0.0,
@@ -259,10 +305,11 @@ maximize_dispersion_robust <- function(
   objective <- match.arg(objective)
   if(!is.null(seed)) set.seed(seed)
 
-  cooccur <- matrix(0, nrow(sites_df), nrow(sites_df))
   distances <- input_data$distances
   sites_df <- input_data$sites
   n_total <- nrow(sites_df)
+  cooccur <- matrix(0, n_total, n_total)
+
   if(n_total <= 0) stop("No sites provided")
 
   # coerce to 3D
@@ -312,7 +359,7 @@ maximize_dispersion_robust <- function(
     best_objective <- -Inf
 
     for (restart in seq_len(n_restarts)) {
-      current_solution <- greedy_initialize(dist_boot, n_sites, seeds, objective)
+      current_solution <- greedy_initialize_var(dist_boot, n_sites, seeds, lambda_var = lambda_var)
       # ensure selection length
       if (length(current_solution) < n_sites) {
         # try to pad with available_sites
@@ -335,7 +382,7 @@ maximize_dispersion_robust <- function(
         # compute objective for current_solution
         if (length(current_solution) > 0) {
           if (objective == "sum") {
-            curv <- calc_objective_sum(dist_boot, as.integer(current_solution))
+            curv <- calc_objective_sum_var(dist_boot, as.integer(current_solution), lambda_var = lambda_var)
           } else {
             curv <- calc_objective_maxmin(dist_boot, as.integer(current_solution))
           }
@@ -350,10 +397,16 @@ maximize_dispersion_robust <- function(
     if (!is.null(best_solution)) {
       idx <- best_solution
       cooccur[idx, idx] <- cooccur[idx, idx] + 1
-  }
+    
+      all_solutions[[solution_counter]] <- list(
+        sites = sort(best_solution),
+        objective = best_objective
+        )
+      solution_counter <- solution_counter + 1
+    }
     
     if(verbose && (b %% max(1, floor(n_bootstrap/10)) == 0)) cat(sprintf("Bootstrap %d/%d\n", b, n_bootstrap))
-  } # bootstrap
+    } # bootstrap
 
   # final greedy + local search on combined (non-boot) distances
   final_solution <- greedy_initialize(dist_combined, n_sites, seeds, objective)
@@ -371,11 +424,20 @@ maximize_dispersion_robust <- function(
     final_objective <- as.numeric(final_res$objective)
   } else {
     if (objective == "sum")
-      final_objective <- calc_objective_sum(dist_combined, as.integer(final_solution)) else 
+      final_objective <- calc_objective_sum_var(dist_combined, as.integer(final_solution), lambda_var = lambda_var) else 
       final_objective <- calc_objective_maxmin(dist_combined, as.integer(final_solution))
   }
 
+  # remove diagonal — marginal selection is irrelevant
+  diag(cooccur) <- 0
+
+  # co-selection strength = sum of pairwise affinities
   cooccurrence_strength <- rowSums(cooccur)
+
+  # boost seeds so they always appear in top ranks
+  if (length(seeds) > 0) {
+      cooccurrence_strength[seeds] <- max(cooccurrence_strength) + 1
+  }
 
   stability <- data.frame(
     site_id = sites_df$site_id,
@@ -383,46 +445,37 @@ maximize_dispersion_robust <- function(
     is_seed = sites_df$required
   )
 
-  # Highest "teamwork" sites first
+  # rank by co-selection
   stability <- stability[order(-stability$cooccur_strength), ]
 
-  # top solutions aggregation
-  top_solutions <- data.frame(
-      rank = integer(), 
-      sites = I(list()), 
-      objective = numeric(), 
-      frequency = numeric()
-    )
+  ###########################################
+  ### Identify the most stable combination ###
+  ###########################################
 
   if (length(all_solutions) == 0) {
-    top_solutions 
+      most_stable_solution <- rep(NA, n_sites)
+      most_stable_frequency <- 0
   } else {
-    solution_strings <- sapply(all_solutions, function(x) paste(sort(x$sites), collapse = "-"))
-    solution_objectives <- sapply(all_solutions, function(x) x$objective)
-    unique_solutions <- unique(solution_strings)
-    for (i in seq_along(unique_solutions)) {
-      idx <- which(solution_strings == unique_solutions[i])
-      sites_vector <- all_solutions[[idx[1]]]$sites
-      top_solutions <- rbind(
-        top_solutions, 
-        data.frame(
-          rank = i, 
-          sites = I(list(sites_vector)), 
-          objective = mean(solution_objectives[idx]), 
-          frequency = length(idx)/max(1,n_bootstrap)
-        )
-      )
-    }
-    top_solutions <- top_solutions[order(-top_solutions$frequency, -top_solutions$objective), ]
-    if (nrow(top_solutions) > track_top_n) top_solutions <- top_solutions[1:track_top_n, ]
+
+    # Convert combos to unique keys
+    sol_strings <- sapply(all_solutions, function(x)
+        paste(x$sites, collapse = "-")
+    )
+
+    # Count frequency of each unique combination
+    tab <- table(sol_strings)
+
+    # Most frequent combo across bootstraps
+    best_combo_key <- names(which.max(tab))
+    most_stable_frequency <- max(tab) / n_bootstrap
+    most_stable_solution <- as.integer(strsplit(best_combo_key, "-")[[1]])
   }
 
   # return these objects back to the user. 
   list(
-    selected_sites = final_solution,
-    objective_value = final_objective,
+    selected_sites = most_stable_solution,
+    stability_score = most_stable_frequency,
     stability = stability,
-    top_solutions = top_solutions,
     settings = list(
       n_sites = n_sites,
       n_bootstrap = n_bootstrap, 
@@ -460,7 +513,7 @@ create_example_data <- function(n_sites = 30, seed = 101) {
   )
 
   ### any of these can be the seeds. 
-  df[order(dists2c)[1:3],'required'] <- TRUE
+  df[order(dists2c)[1:2],'required'] <- TRUE
 
   # a few required seeds
   uncertain_sites <- sample(setdiff(seq_len(n_sites), which(df$required)), size = min(6, n_sites-3))
@@ -479,12 +532,13 @@ create_example_data <- function(n_sites = 30, seed = 101) {
 }
 
 # small quick run (fast) to verify everything
-test_data <- create_example_data(n_sites = 50, seed = 23)
+test_data <- create_example_data(n_sites = 75, seed = 20)
 res <- maximize_dispersion_robust(
   input_data = test_data,
-  n_sites = 25,
+ # lambda_var = 0.99,
+  n_sites = 15,
   n_bootstrap = 99,
-  dropout_prob = 0.10,
+  dropout_prob = 0.2,
   objective = "sum",
   n_local_search_iter = 50,
   n_restarts = 2,
@@ -492,8 +546,8 @@ res <- maximize_dispersion_robust(
   verbose = TRUE
 )
 print(res$selected_sites)
-print(res$objective_value)
 print(head(res$stability, 10))
+
 
 ## plot results
 library(ggplot2)
@@ -512,8 +566,158 @@ ggplot(data = plottable,
     x = lon, 
     y = lat, 
     shape = required, 
-    size = selection_freq,
+    size = cooccur_strength,
     color = selected
     )
   ) +
   geom_point()
+
+
+
+
+
+
+# maximin Latin-Hypercube-like subset selection (pure R)
+maximin_latin_hypercube_select <- function(
+  input_data,
+  n_sites = 5,
+  n_restarts = 50,
+  seed = NULL,
+  force_seeds = TRUE,   # include required sites in sites_df$required
+  verbose = TRUE
+) {
+  if (!is.null(seed)) set.seed(seed)
+  sites_df <- input_data$sites
+  dist_mat <- as.matrix(coerce_to_3d_array(input_data$distances, nrow(sites_df))[,,1])
+  n_total <- nrow(sites_df)
+  if (n_sites <= 0 || n_sites > n_total) stop("n_sites must be between 1 and nrow(sites)")
+  
+  # forced seeds handling
+  seeds <- integer(0)
+  if ("required" %in% names(sites_df) && force_seeds) {
+    seeds <- which(as.logical(sites_df$required))
+    if (length(seeds) > n_sites) stop("Number of required seeds > n_sites")
+  }
+  
+  # 1) assign each site to lat-bin and lon-bin (1..n_sites)
+  lat_rank <- rank(sites_df$lat, ties.method = "random")
+  lon_rank <- rank(sites_df$lon, ties.method = "random")
+  
+  # Convert ranks to bins 1..n_sites
+  lat_bin <- ceiling(lat_rank / (n_total / n_sites))
+  lon_bin <- ceiling(lon_rank / (n_total / n_sites))
+  # clamp to 1..n_sites
+  lat_bin[lat_bin < 1] <- 1; lat_bin[lat_bin > n_sites] <- n_sites
+  lon_bin[lon_bin < 1] <- 1; lon_bin[lon_bin > n_sites] <- n_sites
+  
+  # Precompute list of candidates per lat_bin
+  cand_by_row <- lapply(1:n_sites, function(r) which(lat_bin == r))
+  
+  best_overall <- list(selected = NULL, minpair = -Inf)
+  
+  for (rst in seq_len(n_restarts)) {
+    if(verbose && rst %% max(1, floor(n_restarts/10)) == 0) cat(sprintf("restart %d/%d\n", rst, n_restarts))
+    
+    selected <- integer(0)
+    used_cols <- integer(0)
+    
+    # seed placement: try to place seeds first
+    if (length(seeds) > 0) {
+      for (s in seeds) {
+        rb <- lat_bin[s]
+        cb <- lon_bin[s]
+        # if that row already has a seed selected, we'll allow multiple but prefer unique rows
+        if (!(rb %in% names(selected))) {
+          selected <- c(selected, s)
+          used_cols <- union(used_cols, cb)
+        } else {
+          # if conflict, append anyway (we'll trim/pad later)
+          selected <- c(selected, s)
+          used_cols <- union(used_cols, cb)
+        }
+      }
+    }
+    
+    # Choose remaining rows (lat-bins) order random or from center outward
+    remaining_rows <- setdiff(1:n_sites, unique(lat_bin[selected]))
+    # randomize row selection order per restart for diversification
+    row_order <- sample(remaining_rows, length(remaining_rows))
+    
+    # Greedy: for each row, pick candidate with unused column that maximizes min distance to selected
+    for (r in row_order) {
+      candidates <- cand_by_row[[r]]
+      if (length(candidates) == 0) next
+      
+      # prioritize candidates whose column not yet used
+      free_cands <- candidates[! (lon_bin[candidates] %in% used_cols)]
+      if (length(free_cands) == 0) {
+        # if none free, allow any candidate in that row
+        free_cands <- candidates
+      }
+      
+      # if nothing selected yet, pick the candidate closest to row center (or random)
+      if (length(selected) == 0) {
+        pick <- sample(free_cands, 1)
+      } else {
+        # maximin criterion: pick candidate maximizing the minimum distance to already selected
+        mins <- sapply(free_cands, function(i) min(dist_mat[i, selected]))
+        # prefer larger min; break ties randomly
+        best_idx <- which(max(mins) == mins)
+        pick <- sample(free_cands[best_idx], 1)
+      }
+      selected <- c(selected, pick)
+      used_cols <- union(used_cols, lon_bin[pick])
+      # stop early if we already have enough
+      if (length(selected) >= n_sites) break
+    }
+    
+    # if we did not select enough (e.g., many empty rows), pad greedily by maxmin among remaining candidates
+    if (length(selected) < n_sites) {
+      remaining_cand <- setdiff(seq_len(n_total), selected)
+      while (length(selected) < n_sites && length(remaining_cand) > 0) {
+        if (length(selected) == 0) {
+          pick <- sample(remaining_cand, 1)
+        } else {
+          mins <- sapply(remaining_cand, function(i) min(dist_mat[i, selected]))
+          best_idx <- which.max(mins)
+          pick <- remaining_cand[best_idx[1]]
+        }
+        selected <- c(selected, pick)
+        remaining_cand <- setdiff(remaining_cand, pick)
+      }
+    }
+    
+    # trim if we accidentally selected more than n_sites (possible if seeds > rows etc.)
+    if (length(selected) > n_sites) {
+      # keep seeds, and then choose by greedily removing the site whose removal increases min-pairwise the most?
+      # simple approach: keep seeds + first (n_sites - length(seeds)) of the non-seed picks
+      nonseeds <- setdiff(selected, seeds)
+      keep_non <- head(nonseeds, n_sites - length(seeds))
+      selected <- unique(c(seeds, keep_non))
+      # if still too many, truncate
+      if (length(selected) > n_sites) selected <- selected[1:n_sites]
+    }
+    
+    # Evaluate min pairwise distance
+    sel <- unique(selected)[1:n_sites]
+    pair_dists <- dist_mat[sel, sel]
+    mpd <- if (length(sel) <= 1) 0 else min(pair_dists[row(pair_dists) < col(pair_dists)])
+    
+    # update best
+    if (mpd > best_overall$minpair) {
+      best_overall$minpair <- mpd
+      best_overall$selected <- sel
+    }
+  } # restarts
+  
+  if(verbose) cat("Done. Best min-pairwise distance:", best_overall$minpair, "\n")
+  return(list(selected = sort(as.integer(best_overall$selected)), minpair = best_overall$minpair))
+}
+
+
+
+
+test_data <- create_example_data(n_sites = 50, seed = 123)
+res_lhs <- maximin_latin_hypercube_select(test_data, n_sites = 8, n_restarts = 200, seed = 42, verbose = TRUE)
+print(res_lhs$selected)
+points(test_data$sites$lon[res_lhs$selected], test_data$sites$lat[res_lhs$selected], col = "red", pch = 19)
