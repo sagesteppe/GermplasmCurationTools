@@ -8,17 +8,42 @@ cpp_code <- '
 using namespace Rcpp;
 
 // ---------- Helper non-exported functions ----------
-static double calc_objective_sum_c(const NumericMatrix &dist, const IntegerVector &selected) {
+static double calc_objective_sum_c(const NumericMatrix &dist, const IntegerVector &selected, double lambda_var = 0.0) {
   int n = selected.size();
-  double total = 0.0;
+  if(n < 2) return 0.0;
+  
+  // Collect all pairwise distances
+  std::vector<double> dists;
+  dists.reserve((n * (n - 1)) / 2);
+  
   for(int i = 0; i < n - 1; ++i) {
     for(int j = i + 1; j < n; ++j) {
       int ii = selected[i] - 1;
       int jj = selected[j] - 1;
-      total += dist(ii, jj);
+      dists.push_back(dist(ii, jj));
     }
   }
-  return total;
+  
+  // Base dispersion (sum)
+  double obj_disp = 0.0;
+  for(double d : dists) {
+    obj_disp += d;
+  }
+  
+  // Variance penalty (only if we have 2+ distances)
+  double obj_var = 0.0;
+  if(dists.size() >= 2) {
+    double mean = obj_disp / dists.size();
+    double sum_sq_diff = 0.0;
+    for(double d : dists) {
+      double diff = d - mean;
+      sum_sq_diff += diff * diff;
+    }
+    double variance = sum_sq_diff / (dists.size() - 1);  // Sample variance
+    obj_var = -variance;
+  }
+  
+  return obj_disp + lambda_var * obj_var;
 }
 
 static double calc_objective_maxmin_c(const NumericMatrix &dist, const IntegerVector &selected) {
@@ -66,13 +91,15 @@ double calc_objective_maxmin(NumericMatrix dist, IntegerVector selected) {
 
 // ---------- Exported local search swap ----------
  // [[Rcpp::export]]
-List local_search_swap(NumericMatrix dist, IntegerVector selected, IntegerVector candidates, std::string objective, int max_iter) {
+List local_search_swap(NumericMatrix dist, IntegerVector selected, 
+                       IntegerVector candidates, std::string objective, 
+                       int max_iter, double lambda_var = 0.0) {
   int n_sel = selected.size();
   int n_cand = candidates.size();
   double current_obj = -R_PosInf;
 
   if(objective == "sum") {
-    current_obj = calc_objective_sum_c(dist, selected);
+    current_obj = calc_objective_sum_c(dist, selected, lambda_var);
   } else {
     current_obj = calc_objective_maxmin_c(dist, selected);
   }
@@ -88,8 +115,10 @@ List local_search_swap(NumericMatrix dist, IntegerVector selected, IntegerVector
         double new_obj;
 
         if(objective == "sum") {
-          double delta = calc_delta_sum_c(dist, selected, i, candidates[j]);
-          new_obj = current_obj + delta;
+          // Recalculate with variance penalty
+          IntegerVector temp_selected = clone(selected);
+          temp_selected[i] = candidates[j];
+          new_obj = calc_objective_sum_c(dist, temp_selected, lambda_var);
         } else {
           IntegerVector temp_selected = clone(selected);
           temp_selected[i] = candidates[j];
@@ -248,15 +277,11 @@ calc_objective_sum_var <- function(dist_mat, selected, lambda_var) {
   n <- length(selected)
   if(n < 2) return(0)
   
-  # extract lower-tri pairwise distances
   dists <- dist_mat[selected, selected]
   dists <- dists[lower.tri(dists)]
   
-  # base dispersion
   obj_disp <- sum(dists)
-  
-  # penalty for uneven spacing
-  obj_var <- -var(dists)
+  obj_var <- if(length(dists) >= 2) -var(dists) else 0
   
   return(obj_disp + lambda_var * obj_var)
 }
@@ -342,6 +367,8 @@ maximize_dispersion_robust <- function(
     should_dropout <- (n_drop > 0 && length(droppable) >= n_drop)
   }
 
+  pb <- txtProgressBar(min = 0, max = 100, style = 3)
+
   for (b in seq_len(n_bootstrap)) {
     available_sites <- seq_len(n_total)
 
@@ -374,14 +401,18 @@ maximize_dispersion_robust <- function(
           current_solution <- c(current_solution, head(extra, needed))
         }
       }
+
+      swappable_solution <- setdiff(current_solution, seeds)
       candidates <- setdiff(available_sites, current_solution)
-      if (length(candidates) > 0 && length(current_solution) == n_sites) {
-        res <- local_search_swap(dist_boot, as.integer(current_solution), as.integer(candidates), objective, n_local_search_iter)
+
+      if (length(candidates) > 0 && length(swappable_solution) > 0){
+        res <- local_search_swap(dist_boot, as.integer(swappable_solution), 
+            as.integer(candidates), objective, n_local_search_iter, lambda_var)
         sol <- as.integer(res$selected)
         objv <- as.numeric(res$objective)
         if (objv > best_objective) {
           best_objective <- objv
-          best_solution <- sol
+          best_solution <- c(seeds, as.integer(res$selected))
         }
       } else {
         # compute objective for current_solution
@@ -410,8 +441,10 @@ maximize_dispersion_robust <- function(
       solution_counter <- solution_counter + 1
     }
     
-    if(verbose && (b %% max(1, floor(n_bootstrap/10)) == 0)) cat(sprintf("Bootstrap %d/%d\n", b, n_bootstrap))
-    } # bootstrap
+    setTxtProgressBar(pb, b)
+    } # end  bootstrap
+  close(pb)
+
 
   # final greedy + local search on combined (non-boot) distances
   final_solution <- greedy_initialize(dist_combined, n_sites, seeds, objective)
@@ -487,7 +520,7 @@ maximize_dispersion_robust <- function(
     ), on = 'site_id', how = 'left', all.x = T
   )
   input_appended$selected <- replace(input_appended$selected, is.na(input_appended$selected), FALSE)
-
+  input_appended$sample_rank <- match(-stability$cooccur_strength, sort(unique(-stability$cooccur_strength)))
   # return objects back to the user. 
 
   list(
@@ -515,7 +548,7 @@ create_example_data <- function(n_sites = 20, seed = 101) {
   df <- data.frame(
     site_id = seq_len(n_sites),
     lat = runif(n_sites, 25, 30),
-    lon = runif(n_sites, -125, -65),
+    lon = runif(n_sites, -125, -120),
     required = FALSE,
     coord_uncertainty = 0
   )
@@ -532,7 +565,7 @@ create_example_data <- function(n_sites = 20, seed = 101) {
   )
 
   ### any of these can be the seeds. 
-  df[order(dists2c)[1:2],'required'] <- TRUE
+  df[order(dists2c)[1],'required'] <- TRUE
 
   # a few required seeds
   uncertain_sites <- sample(setdiff(seq_len(n_sites), which(df$required)), size = min(6, n_sites-3))
@@ -551,12 +584,12 @@ create_example_data <- function(n_sites = 20, seed = 101) {
 }
 
 # small quick run (fast) to verify everything
-test_data <- create_example_data(n_sites = 20, seed = 20)
+test_data <- create_example_data(n_sites = 20, seed = 25)
 res <- maximize_dispersion_robust(
   input_data = test_data,
   lambda_var = 0.1,
-  n_sites = 5,
-  n_bootstrap = 99,
+  n_sites = 7,
+  n_bootstrap = 999,
   dropout_prob = 0.2,
   objective = "sum",
   n_local_search_iter = 50,
@@ -565,8 +598,6 @@ res <- maximize_dispersion_robust(
   verbose = TRUE
 )
 
-
-library(ggplot2)
 ggplot(data = res$input_data, 
   aes(
     x = lon, 
