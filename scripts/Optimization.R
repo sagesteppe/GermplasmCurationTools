@@ -491,11 +491,11 @@ maximize_dispersion_robust <- function(
 # Examples 
 
 # function to create dummy data. 
-create_example_data <- function(n_sites = 30, seed = 101) {
+create_example_data <- function(n_sites = 20, seed = 101) {
   set.seed(seed)
   df <- data.frame(
     site_id = seq_len(n_sites),
-    lat = runif(n_sites, 25, 50),
+    lat = runif(n_sites, 25, 30),
     lon = runif(n_sites, -125, -65),
     required = FALSE,
     coord_uncertainty = 0
@@ -519,7 +519,6 @@ create_example_data <- function(n_sites = 30, seed = 101) {
   uncertain_sites <- sample(setdiff(seq_len(n_sites), which(df$required)), size = min(6, n_sites-3))
   df$coord_uncertainty[uncertain_sites] <- runif(length(uncertain_sites), 0.001, 0.01)
   # distance matrix
-
   n <- nrow(df)
   dist_mat <- matrix(0, n, n)
   for (i in 1:(n-1)) {
@@ -532,11 +531,11 @@ create_example_data <- function(n_sites = 30, seed = 101) {
 }
 
 # small quick run (fast) to verify everything
-test_data <- create_example_data(n_sites = 75, seed = 20)
+test_data <- create_example_data(n_sites = 20, seed = 20)
 res <- maximize_dispersion_robust(
   input_data = test_data,
- # lambda_var = 0.99,
-  n_sites = 15,
+  lambda_var = 0.1,
+  n_sites = 5,
   n_bootstrap = 99,
   dropout_prob = 0.2,
   objective = "sum",
@@ -545,12 +544,6 @@ res <- maximize_dispersion_robust(
   seed = 42,
   verbose = TRUE
 )
-print(res$selected_sites)
-print(head(res$stability, 10))
-
-
-## plot results
-library(ggplot2)
 
 plottable = merge(test_data$sites, res$stability, on = 'site_id', how = 'left')
 plottable = merge(
@@ -570,154 +563,157 @@ ggplot(data = plottable,
     color = selected
     )
   ) +
-  geom_point()
+  geom_point() + 
+  theme_minimal()
 
 
 
 
 
 
-# maximin Latin-Hypercube-like subset selection (pure R)
+
 maximin_latin_hypercube_select <- function(
   input_data,
-  n_sites = 5,
+  n_sites = 6,
   n_restarts = 50,
   seed = NULL,
-  force_seeds = TRUE,   # include required sites in sites_df$required
+  force_seeds = TRUE,
   verbose = TRUE
 ) {
   if (!is.null(seed)) set.seed(seed)
+
   sites_df <- input_data$sites
   dist_mat <- as.matrix(coerce_to_3d_array(input_data$distances, nrow(sites_df))[,,1])
   n_total <- nrow(sites_df)
-  if (n_sites <= 0 || n_sites > n_total) stop("n_sites must be between 1 and nrow(sites)")
-  
-  # forced seeds handling
+
+  if (n_sites <= 0 || n_sites > n_total) stop("n_sites out of range")
+
+  # ---- seeds ----
   seeds <- integer(0)
   if ("required" %in% names(sites_df) && force_seeds) {
     seeds <- which(as.logical(sites_df$required))
-    if (length(seeds) > n_sites) stop("Number of required seeds > n_sites")
+    if (length(seeds) > n_sites)
+      stop("Too many required seeds")
   }
-  
-  # 1) assign each site to lat-bin and lon-bin (1..n_sites)
+
+  # ---- LHS BINNING (robust) ----
   lat_rank <- rank(sites_df$lat, ties.method = "random")
   lon_rank <- rank(sites_df$lon, ties.method = "random")
-  
-  # Convert ranks to bins 1..n_sites
-  lat_bin <- ceiling(lat_rank / (n_total / n_sites))
-  lon_bin <- ceiling(lon_rank / (n_total / n_sites))
-  # clamp to 1..n_sites
-  lat_bin[lat_bin < 1] <- 1; lat_bin[lat_bin > n_sites] <- n_sites
-  lon_bin[lon_bin < 1] <- 1; lon_bin[lon_bin > n_sites] <- n_sites
-  
-  # Precompute list of candidates per lat_bin
+
+  lat_bin <- cut(lat_rank, breaks = n_sites, labels = FALSE, include.lowest = TRUE)
+  lon_bin <- cut(lon_rank, breaks = n_sites, labels = FALSE, include.lowest = TRUE)
+
+  # list of candidates per row
   cand_by_row <- lapply(1:n_sites, function(r) which(lat_bin == r))
-  
+
   best_overall <- list(selected = NULL, minpair = -Inf)
-  
+
+  # ---- main restarts ----
   for (rst in seq_len(n_restarts)) {
-    if(verbose && rst %% max(1, floor(n_restarts/10)) == 0) cat(sprintf("restart %d/%d\n", rst, n_restarts))
-    
+    if (verbose && rst %% max(1, floor(n_restarts/10)) == 0)
+      cat("restart", rst, "of", n_restarts, "\n")
+
     selected <- integer(0)
     used_cols <- integer(0)
-    
-    # seed placement: try to place seeds first
+
+    # ---- place seeds FIRST ----
     if (length(seeds) > 0) {
       for (s in seeds) {
-        rb <- lat_bin[s]
-        cb <- lon_bin[s]
-        # if that row already has a seed selected, we'll allow multiple but prefer unique rows
-        if (!(rb %in% names(selected))) {
-          selected <- c(selected, s)
-          used_cols <- union(used_cols, cb)
-        } else {
-          # if conflict, append anyway (we'll trim/pad later)
-          selected <- c(selected, s)
-          used_cols <- union(used_cols, cb)
-        }
+        selected <- c(selected, s)
+        used_cols <- union(used_cols, lon_bin[s])
       }
     }
-    
-    # Choose remaining rows (lat-bins) order random or from center outward
-    remaining_rows <- setdiff(1:n_sites, unique(lat_bin[selected]))
-    # randomize row selection order per restart for diversification
-    row_order <- sample(remaining_rows, length(remaining_rows))
-    
-    # Greedy: for each row, pick candidate with unused column that maximizes min distance to selected
+
+    # ---- choose rows to fill ----
+    filled_rows <- unique(lat_bin[selected])
+    remaining_rows <- setdiff(1:n_sites, filled_rows)
+    row_order <- sample(remaining_rows)  # randomize order
+
+    # ---- greedy placement row-by-row ----
     for (r in row_order) {
       candidates <- cand_by_row[[r]]
       if (length(candidates) == 0) next
-      
-      # prioritize candidates whose column not yet used
-      free_cands <- candidates[! (lon_bin[candidates] %in% used_cols)]
-      if (length(free_cands) == 0) {
-        # if none free, allow any candidate in that row
-        free_cands <- candidates
-      }
-      
-      # if nothing selected yet, pick the candidate closest to row center (or random)
+
+      # prioritize unused lon-bin
+      free <- candidates[!(lon_bin[candidates] %in% used_cols)]
+      if (length(free) == 0) free <- candidates
+
+      # if no selected yet → pick random
       if (length(selected) == 0) {
-        pick <- sample(free_cands, 1)
+        pick <- sample(free, 1)
       } else {
-        # maximin criterion: pick candidate maximizing the minimum distance to already selected
-        mins <- sapply(free_cands, function(i) min(dist_mat[i, selected]))
-        # prefer larger min; break ties randomly
-        best_idx <- which(max(mins) == mins)
-        pick <- sample(free_cands[best_idx], 1)
+        # maximin criterion
+        mins <- sapply(free, function(i) min(dist_mat[i, selected], na.rm = TRUE))
+        # guard: if all mins are NA, set them to 0
+        mins[is.na(mins)] <- 0
+        best <- which(mins == max(mins))
+        pick <- sample(free[best], 1)
       }
+
       selected <- c(selected, pick)
       used_cols <- union(used_cols, lon_bin[pick])
-      # stop early if we already have enough
       if (length(selected) >= n_sites) break
     }
-    
-    # if we did not select enough (e.g., many empty rows), pad greedily by maxmin among remaining candidates
+
+    # ---- PAD if too few selected ----
     if (length(selected) < n_sites) {
-      remaining_cand <- setdiff(seq_len(n_total), selected)
-      while (length(selected) < n_sites && length(remaining_cand) > 0) {
+      remaining <- setdiff(seq_len(n_total), selected)
+      while (length(selected) < n_sites && length(remaining) > 0) {
         if (length(selected) == 0) {
-          pick <- sample(remaining_cand, 1)
+          pick <- sample(remaining, 1)
         } else {
-          mins <- sapply(remaining_cand, function(i) min(dist_mat[i, selected]))
-          best_idx <- which.max(mins)
-          pick <- remaining_cand[best_idx[1]]
+          mins <- sapply(remaining, function(i) min(dist_mat[i, selected], na.rm = TRUE))
+          mins[is.na(mins)] <- 0
+          pick <- remaining[which.max(mins)]
         }
         selected <- c(selected, pick)
-        remaining_cand <- setdiff(remaining_cand, pick)
+        remaining <- setdiff(remaining, pick)
       }
     }
-    
-    # trim if we accidentally selected more than n_sites (possible if seeds > rows etc.)
+
+    # ---- TRIM if too many selected ----
     if (length(selected) > n_sites) {
-      # keep seeds, and then choose by greedily removing the site whose removal increases min-pairwise the most?
-      # simple approach: keep seeds + first (n_sites - length(seeds)) of the non-seed picks
+      # Always keep seeds first
       nonseeds <- setdiff(selected, seeds)
-      keep_non <- head(nonseeds, n_sites - length(seeds))
-      selected <- unique(c(seeds, keep_non))
-      # if still too many, truncate
-      if (length(selected) > n_sites) selected <- selected[1:n_sites]
+      needed <- n_sites - length(seeds)
+      if (needed < 0) needed <- 0
+      keep_non <- head(nonseeds, needed)
+      selected <- c(seeds, keep_non)
     }
-    
-    # Evaluate min pairwise distance
-    sel <- unique(selected)[1:n_sites]
-    pair_dists <- dist_mat[sel, sel]
-    mpd <- if (length(sel) <= 1) 0 else min(pair_dists[row(pair_dists) < col(pair_dists)])
-    
-    # update best
-    if (mpd > best_overall$minpair) {
+
+    # ---- CLEAN selection ----
+    selected <- unique(as.integer(selected))
+    if (length(selected) > n_sites) selected <- selected[1:n_sites]
+    if (length(selected) < n_sites) next  # skip invalid solution
+
+    # ---- compute min pairwise distance (safe) ----
+    if (length(selected) <= 1) {
+      mpd <- 0
+    } else {
+      submat <- dist_mat[selected, selected]
+      if (!is.matrix(submat) || any(is.na(submat))) {
+        mpd <- 0
+      } else {
+        d <- submat[lower.tri(submat)]
+        d <- d[!is.na(d)]
+        mpd <- if (length(d) == 0) 0 else min(d)
+      }
+    }
+
+    # ---- update best ----
+    if (!is.na(mpd) && mpd > best_overall$minpair) {
       best_overall$minpair <- mpd
-      best_overall$selected <- sel
+      best_overall$selected <- selected
     }
-  } # restarts
-  
-  if(verbose) cat("Done. Best min-pairwise distance:", best_overall$minpair, "\n")
-  return(list(selected = sort(as.integer(best_overall$selected)), minpair = best_overall$minpair))
+  }
+
+  if (verbose) cat("Best min pairwise:", best_overall$minpair, "\n")
+  return(list(selected = sort(best_overall$selected), 
+              minpair = best_overall$minpair))
 }
 
 
-
-
-test_data <- create_example_data(n_sites = 50, seed = 123)
-res_lhs <- maximin_latin_hypercube_select(test_data, n_sites = 8, n_restarts = 200, seed = 42, verbose = TRUE)
+res_lhs <- maximin_latin_hypercube_select(test_data, n_sites = 5, n_restarts = 200, seed = 42, verbose = TRUE)
 print(res_lhs$selected)
+plot(test_data$sites$lon[-res_lhs$selected], test_data$sites$lat[-res_lhs$selected], col = "grey", pch = 19)
 points(test_data$sites$lon[res_lhs$selected], test_data$sites$lat[res_lhs$selected], col = "red", pch = 19)
