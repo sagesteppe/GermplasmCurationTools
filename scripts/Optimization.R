@@ -163,6 +163,8 @@ message(
 
 # ---- 2) R helper functions
 
+#' Ensure that both geographic and climatic distances are in 3D array format
+#' @donotexport
 coerce_to_3d_array <- function(distances, n_sites) {
   if (is.null(distances)) {
     stop("'distances' is NULL")
@@ -214,6 +216,7 @@ coerce_to_3d_array <- function(distances, n_sites) {
   stop("Unsupported 'distances' type")
 }
 
+#' calculate distances between sites (Haversine formula)
 great_circle_distance <- function(lat1, lon1, lat2, lon2) {
   # Haversine in km
   to_rad <- pi / 180
@@ -229,7 +232,32 @@ great_circle_distance <- function(lat1, lon1, lat2, lon2) {
   return(r * c)
 }
 
-update_distances_jitter <- function(distances, sites_df, uncertain_idx) {
+#' Jitter coordinates based on uncertainty (in meters)
+#' @donotexport
+jitter_coords <- function(lat, lon, uncertainty_m) {
+
+  # handle missing / zero uncertainty
+  uncertainty_m[is.na(uncertainty_m)] <- 0
+  
+  theta <- runif(length(lat), 0, 2*pi)
+  r <- sqrt(runif(length(lat))) * uncertainty_m
+
+  dx <- r * cos(theta)
+  dy <- r * sin(theta)
+
+  dlat <- dy / 111320
+  dlon <- dx / (111320 * cos(lat * pi/180))
+
+  list(
+    jittered_lat = lat + dlat,
+    jittered_lon = lon + dlon
+  )
+}
+
+
+#' Jitter coordinates of uncertain sites and update distance matrices
+#' @donotexport
+update_distances_jitter <- function(distances, sites_df, uncertain_idx, env_models = NULL, use_model = FALSE) {
   n <- nrow(sites_df)
   dist_arr <- coerce_to_3d_array(distances, n)
   K <- dim(dist_arr)[3]
@@ -240,15 +268,19 @@ update_distances_jitter <- function(distances, sites_df, uncertain_idx) {
   )
   
   if (length(uncertain_idx) > 0) {
-    for (i in uncertain_idx) {
-      jitter_sd <- sites_df$coord_uncertainty[i]
-      if (is.na(jitter_sd) || jitter_sd <= 0) {
-        next
-      }
-      coords_boot$lat[i] <- coords_boot$lat[i] + rnorm(1, 0, jitter_sd)
-      coords_boot$lon[i] <- coords_boot$lon[i] + rnorm(1, 0, jitter_sd)
+    j <- jitter_coords(
+      lat   = coords_boot$lat[uncertain_idx],
+      lon   = coords_boot$lon[uncertain_idx],
+      uncertainty_m = sites_df$coord_uncertainty[uncertain_idx]
+    )
+
+    # only replace if jitter returned non-empty output
+    if (length(j$lat) > 0) {
+      coords_boot$lat[uncertain_idx] <- j$lat
+      coords_boot$lon[uncertain_idx] <- j$lon
     }
-    
+  }
+
     # recompute primary distance matrix
     for (i in uncertain_idx) {
       for (j in seq_len(n)) {
@@ -262,11 +294,29 @@ update_distances_jitter <- function(distances, sites_df, uncertain_idx) {
         dist_boot[j, i, 1] <- d
       }
     }
-    # perturb other matrices proportionally (if present)
-    if (K >= 2) {
-      for (k in 2:K) {
+  
+      # update other layers conditionally
+  if (K >= 2 && length(uncertain_idx) > 0) {
+    for (k in 2:K) {
+      if (use_model && !is.null(env_models) && !is.null(env_models[[k]])) {
+        fit <- env_models[[k]]
         for (i in uncertain_idx) {
-          jitter_factor <- rnorm(1, 1, 0.05)
+          for (j in seq_len(n)) {
+            new_geo <- dist_boot[i, j, 1]
+            # predict via the linear model (conditional expectation)
+            pred_env <- predict(fit, newdata = data.frame(geo_vec = new_geo))
+            # make sure prediction is finite
+            if (!is.finite(pred_env)) {
+              pred_env <- dist_boot[i, j, k]  # fallback to original
+            }
+            dist_boot[i, j, k] <- pred_env
+            dist_boot[j, i, k] <- pred_env
+          }
+        }
+      } else {
+        # small-n fallback: small multiplicative jitter (~2.5%)
+        for (i in uncertain_idx) {
+          jitter_factor <- rnorm(1, mean = 1, sd = 0.025)
           dist_boot[i, , k] <- dist_boot[i, , k] * jitter_factor
           dist_boot[, i, k] <- dist_boot[, i, k] * jitter_factor
         }
@@ -277,6 +327,7 @@ update_distances_jitter <- function(distances, sites_df, uncertain_idx) {
 }
 
 # Greedy initialization
+#' @donotexport 
 greedy_initialize <- function(
     dist_matrix,
     n_sites,
@@ -315,6 +366,7 @@ greedy_initialize <- function(
 }
 
 # Variance-penalized sum objective
+#' @donotexport
 calc_objective_sum_var <- function(dist_mat, selected, lambda_var) {
   n <- length(selected)
   if (n < 2) {
@@ -331,6 +383,7 @@ calc_objective_sum_var <- function(dist_mat, selected, lambda_var) {
 }
 
 # Wrapper for greedy initialization using new objective
+#' @donotexport
 greedy_initialize_var <- function(dist_matrix, n_sites, seeds, lambda_var) {
   n_total <- nrow(dist_matrix)
   selected <- seeds
@@ -372,7 +425,6 @@ greedy_initialize_var <- function(dist_matrix, n_sites, seeds, lambda_var) {
 #' Required sites (1 - as many as < n_sites) will serve as fixed parameters in the optimization scenario which greatly speed up run time.
 #' They can represent: existing collections, collections with a very strong chance of happenging due to a funding agency mechanism, or otherwise a single population closet to the geographic center of the species.
 #' Notably the solve will be 'around' this site, hence the solves are not purely theoretical, but linked to a pragmatic element.
-#'
 #'
 #'
 #' @param input_data A list with two elements: 'distances' (distance matrix or array) and 'sites' (data frame of site metadata).
@@ -430,6 +482,8 @@ maximize_dispersion <- function(
   
   # coerce to 3D
   distances <- coerce_to_3d_array(distances, n_total)
+  K <- dim(distances)[3]
+
   
   # combine first two matrices by weights
   dist_combined <- distances[,, 1] * weight_1
@@ -447,9 +501,31 @@ maximize_dispersion <- function(
     !is.na(sites_df$coord_uncertainty) & sites_df$coord_uncertainty > 0
   )
   
+  #####################################################################
+  # FIT env_models this is used to jitter the environmental distances between sites
+  #####################################################################
+  use_model <- (K >= 2) && (n_total > 25)
+  env_models <- NULL
+  if (use_model) {
+    geo_vec <- distances[,,1][lower.tri(distances[,,1])]
+    env_models <- vector("list", K)
+    env_models[[1]] <- NA
+    for (k in 2:K) {
+      env_vec <- distances[,,k][lower.tri(distances[,,k])]
+      # safe lm fit: if env_vec or geo_vec invalid, set NA
+      if (length(env_vec) == length(geo_vec) && length(geo_vec) > 1 && all(is.finite(geo_vec)) && all(is.finite(env_vec))) {
+        env_models[[k]] <- tryCatch(lm(env_vec ~ geo_vec), error = function(e) NULL)
+      } else {
+        env_models[[k]] <- NULL
+      }
+    }
+  }
+
+  cooccur <- matrix(0L, n_total, n_total)
   selection_counts <- integer(n_total)
   all_solutions <- list()
   solution_counter <- 1
+
   if (verbose) {
     cat(
       sprintf(
@@ -463,15 +539,16 @@ maximize_dispersion <- function(
     )
   }
   
-  ##################################################################
-  ## carry out the bootstrapping procedure in the following loop ##
+  ##############################################
+  ###                bootstrap              ###
+  ##############################################
   if (dropout_prob > 0) {
     droppable <- setdiff(seq_len(n_total), seeds)
     n_drop <- floor(length(droppable) * dropout_prob)
     should_dropout <- (n_drop > 0 && length(droppable) >= n_drop)
   }
   
-  pb <- txtProgressBar(min = 0, max = 100, style = 3)
+  pb <- txtProgressBar(min = 0, max = n_bootstrap, style = 3)
   
   for (b in seq_len(n_bootstrap)) {
     ## bs begins.
@@ -488,11 +565,13 @@ maximize_dispersion <- function(
       dist_boot_array <- update_distances_jitter(
         distances,
         sites_df,
-        uncertain_idx
+        uncertain_idx, 
+        env_models, 
+        use_model
       )
       dist_boot <- dist_boot_array[,, 1] * weight_1
-      if (dim(dist_boot_array)[3] >= 2 && weight_2 > 0) {
-        dist_boot <- dist_boot + dist_boot_array[,, 2] * weight_2
+      if (K >= 2 && weight_2 > 0) {
+        dist_boot <- dist_boot + dist_boot_array[,,2] * weight_2
       }
     } else {
       dist_boot <- dist_combined
@@ -572,37 +651,13 @@ maximize_dispersion <- function(
     
     setTxtProgressBar(pb, b)
   } # end  bootstrap
-  close(pb)
+  close(pb) # progress bar 
   
-  # final greedy + local search on combined (non-boot) distances
-  final_solution <- greedy_initialize(dist_combined, n_sites, seeds, objective)
-  candidates_final <- setdiff(seq_len(n_total), final_solution)
-  if (length(final_solution) == n_sites && length(candidates_final) > 0) {
-    final_res <- local_search_swap(
-      dist_combined,
-      as.integer(final_solution),
-      as.integer(candidates_final),
-      objective,
-      n_local_search_iter * 2
-    )
-    
-    final_solution <- as.integer(final_res$selected)
-    final_objective <- as.numeric(final_res$objective)
-  } else {
-    if (objective == "sum") {
-      final_objective <- calc_objective_sum_var(
-        dist_combined,
-        as.integer(final_solution),
-        lambda_var = lambda_var
-      )
-    } else {
-      final_objective <- calc_objective_maxmin(
-        dist_combined,
-        as.integer(final_solution)
-      )
-    }
-  }
   
+  ###########################################
+  ### Identify the most stable combination ###
+  ## the combination that appears most frequently across bootstraps. ##
+  ###########################################
   # remove diagonal — marginal selection is irrelevant
   diag(cooccur) <- 0
   
@@ -623,11 +678,6 @@ maximize_dispersion <- function(
   # rank by co-selection
   stability <- stability[order(-stability$cooccur_strength), ]
   
-  ###########################################
-  ### Identify the most stable combination ###
-  ## this is the combination that appears most frequently across bootstraps. ##
-  ## so is most resilient to populations being extirpated, and to location uncertainty. ##
-  ###########################################
   if (length(all_solutions) == 0) {
     most_stable_solution <- rep(NA, n_sites)
     most_stable_frequency <- 0
@@ -646,6 +696,11 @@ maximize_dispersion <- function(
     most_stable_solution <- as.integer(strsplit(best_combo_key, "-")[[1]])
   }
   
+  
+  ##############################################
+  ###             return objects            ####
+  ##############################################
+  ## input data with a couple columns added on, probably all most users want.
   input_appended = merge(sites_df, stability, on = 'site_id', how = 'left')
   input_appended = merge(
     input_appended,
@@ -661,7 +716,9 @@ maximize_dispersion <- function(
     input_appended$selected,
     is.na(input_appended$selected),
     FALSE
-  )
+  )  
+  
+  ### add on the relative selection/collection priority ranks for the populations. 
   input_appended <- input_appended[
     order(input_appended$cooccur_strength, decreasing = TRUE),
   ]
@@ -671,7 +728,6 @@ maximize_dispersion <- function(
   )
   
   # return objects back to the user.
-  
   list(
     input_data = input_appended,
     selected_sites = most_stable_solution,
@@ -713,21 +769,10 @@ maximize_dispersion <- function(
   
   ## push some jitter onto the sites to represent coordinate uncertainty. 
   uncertain_sites <- sample(setdiff(seq_len(n_sites), which(df$required)), size = min(6, n_sites-3))
-  df$coord_uncertainty[uncertain_sites] <- runif(length(uncertain_sites), 0.001, 0.01)
-
-  # distance matrix###### REPLACE WITH SF. 
-  n <- nrow(df)
-  dist_mat <- matrix(0, n, n)
-  for (i in 1:(n-1)) {
-    for (j in (i+1):n) {
-      d <- great_circle_distance(df$lat[i], df$lon[i], df$lat[j], df$lon[j])
-      dist_mat[i,j] <- d; dist_mat[j,i] <- d
-    }
-  }
+  df$coord_uncertainty[uncertain_sites] <- runif(length(uncertain_sites), 1000, 10000) # meters
   
-  sf::st_as_sf(df, coords = c('lon', 'lat'), crs = 4326, remove = FALSE) |>
-    sf::st_distance() |>
-    units::drop_units()
+ # sf::st_as_sf(df, coords = c('lon', 'lat'), crs = 4326, remove = FALSE) |>
+ #   sf::st_distance() 
   
   
   test_data <- list(distances = dist_mat, sites = df)
@@ -736,7 +781,7 @@ maximize_dispersion <- function(
   system.time(
     res <- maximize_dispersion(
       input_data = test_data,
-      lambda_var = 0.2,
+      lambda_var = 0.1,
       n_sites = 8,
       n_bootstrap = 500,
       dropout_prob = 0.2,
