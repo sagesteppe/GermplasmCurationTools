@@ -358,7 +358,10 @@ maximize_dispersion_robust <- function(
   selection_counts <- integer(n_total)
   all_solutions <- list()
   solution_counter <- 1
-  if(verbose) cat(sprintf("Sites: %d | Seeds: %d | Uncertain: %d\n", n_total, length(seeds), length(uncertain_idx)))
+  if(verbose) cat(
+    sprintf("Sites: %d | Seeds: %d | Requested: %d | Coord. Uncertain: %d | BS Replicates: %d\n", 
+    n_total, length(seeds), n_sites, length(uncertain_idx), n_bootstrap)
+  )
 
   ## carry out the bootstrapping procedure in this loop ##
   if (dropout_prob > 0) {
@@ -520,7 +523,9 @@ maximize_dispersion_robust <- function(
     ), on = 'site_id', how = 'left', all.x = T
   )
   input_appended$selected <- replace(input_appended$selected, is.na(input_appended$selected), FALSE)
+  input_appended <- input_appended [ order(input_appended$cooccur_strength, decreasing = TRUE), ]
   input_appended$sample_rank <- match(-stability$cooccur_strength, sort(unique(-stability$cooccur_strength)))
+
   # return objects back to the user. 
 
   list(
@@ -532,31 +537,27 @@ maximize_dispersion_robust <- function(
       n_sites = n_sites,
       n_bootstrap = n_bootstrap, 
       objective = objective, 
+      lambda = lambda_var,
       dropout_prob = dropout_prob, 
       n_uncertain = length(uncertain_idx)
     )
   )
 }
 
-
-
-# Examples 
+########### Examples ###########
 
 # function to create dummy data. 
 create_example_data <- function(n_sites = 20, seed = 101) {
   set.seed(seed)
   df <- data.frame(
     site_id = seq_len(n_sites),
-    lat = runif(n_sites, 25, 30),
+    lat = runif(n_sites, 25, 30), # play with these to see elongated results. 
     lon = runif(n_sites, -125, -120),
     required = FALSE,
     coord_uncertainty = 0
   )
 
-  ## identify the center of all points.
-  # the algorithm requires the center of gravity
-  # otherwise it will just select a 'ring' of sites around the
-  # exterior of occurrences.  
+  # ensure at least one seed near center
   dists2c <- great_circle_distance(
     mean(df$lat), 
     mean(df$lon), 
@@ -587,9 +588,9 @@ create_example_data <- function(n_sites = 20, seed = 101) {
 test_data <- create_example_data(n_sites = 20, seed = 25)
 res <- maximize_dispersion_robust(
   input_data = test_data,
-  lambda_var = 0.1,
-  n_sites = 7,
-  n_bootstrap = 999,
+  lambda_var = 0.2,
+  n_sites = 8,
+  n_bootstrap = 99,
   dropout_prob = 0.2,
   objective = "sum",
   n_local_search_iter = 50,
@@ -597,6 +598,7 @@ res <- maximize_dispersion_robust(
   seed = 42,
   verbose = TRUE
 )
+
 
 ggplot(data = res$input_data, 
   aes(
@@ -609,4 +611,19 @@ ggplot(data = res$input_data,
   ) +
   geom_point() + 
   ggrepel::geom_label_repel(aes(label = site_id), size = 4) + 
-  theme_minimal()
+  theme_minimal() + 
+  labs(caption = res$settings$lambda_var) 
+
+
+ggplot(data = res$input_data, 
+  aes(
+    x = lon, 
+    y = lat, 
+    shape = required, 
+    size = -sample_rank,
+    color = sample_rank
+    )
+  ) +
+geom_point() + 
+ggrepel::geom_label_repel(aes(label = sample_rank), size = 4) +
+theme_minimal() 
