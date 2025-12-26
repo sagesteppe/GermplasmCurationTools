@@ -1,0 +1,74 @@
+---
+title: safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation 
+author: "| Reed Clark Benkendorf$^1$$^,$$^2$^[Correspondence:
+  reedbenkendorf2021@u.northwestern.edu], Brianna Wieferich$^2$^,  \n| $^1$ Northwestern University, Evanston, Illinois
+  60208 USA  \n| $^2$ Chicago Botanic Garden, 1000 Lake Cook Road, Glencoe Illinois
+  60022 USA  \n"
+output:
+  pdf_document: default
+  toc: false
+  figsintext: false
+orcid: "Reed Benkendorf https://orcid.org/0000-0003-3110-6687"
+csl: "./citations/restoration-ecology.csl"  ##### CHANGE ME
+bibliography: ./citations/citations.bib ##### CHANGE ME
+citation_package: biblatex
+link-citations: true
+fig_caption: true
+header-includes:
+  - \usepackage[markers]{endfloat}
+  - \usepackage{setspace}\doublespacing
+  - \usepackage{lineno}
+  - \linenumbers
+---
+
+## Introduction
+
+Current estimates suggest 45% of flowering plant species are at risk of extinction (@bachman2024extinct, @isbell2023expert).
+Two growing responses attempting to mitigate this loss of taxonomic and genetic diversity include habitat restoration for *in situ* conservation, and the collection and storage of plant germplasm in *ex situ* collections (@heywood2017plant, @volis2010quasi, @westwood2021botanic). 
+Ecological restoration has become a tool to enhance the habitat quality in natural areas, or to convert land back to natural areas to provide connectivity between remnant parcels, helping to preserve plant and other biodiversity *in situ* (@gann2019international).
+Long-term *ex situ* conservation is used when a species has, or is expected to experience, the loss or degradation of their habitat beneath thresholds that can support the species persistence in the wild (@mounce2017ex, @union2012integrated).
+However, analogously to *ex situ* conservation - albeit on a different time scale, the development of native plant propagules for ecological restoration requires the collection, and agricultural amplification of germplasm to meet the volumes required for use in restortaion projects (SHRIVER et al. 2026, @wambugu2023role). 
+
+Central to attaining germplasm collections is the acquisition of adequate amounts of genetic diversity for a portion of species range for *in situ* restoration or of the entire species for *ex situ*  conservation (@walters2021unique, @SHRIVER). 
+Approaches for collecting germplasm from wild species for *in situ* restoration projects and *ex situ* in use by the nearly 1750 seed banks globally often follows a set of minimal rule-of-thumb guidelines developed from agricultural and population genetics studies (@hay2013advances, @westwood2021botanic). 
+Currently, guidance exists forconservation and *in situ* restoration projects the number of propagules that can be collected to safeguard the persistence of natural population (i.e. avoid over-harvesting), the minimum number of individuals that need to be sampled per population, the number of populations to sample per species to reach genetic diversity targets (@basey2015producing, @nevill2018ethical).
+AND guidance on the geographic structure of where to move restoration collections to and from to avoid using maladapted phenotypes at a restoration site (@vander2010question, @CITE).
+However, a variety of goals exist at the institutional, programmatic, and bio-regional organizational levels, as well as opinions among curators, which have fostered tailored strategies beyond the rule-of-thumb guidelines (@guerrant2014sampling).
+Further, these minimal guidelines do not guarantee alignment or achievement of goals for all observed species and population genetic structures, or population vital rates, because of nuances in the biology and ecology of individual species (@bucharova2025assessing, @hofner2025spatial, @hoban2020taxonomic, @whitlock2016consequences). 
+
+However the germplasm collections desired for ecological restoration and *ex situ* conservation differ in a key attribute. 
+Restoration collections seek to maximize chances of restoration success at sites in a defined focal area and time, and seeks to identify populations with the highest chance of doing so, while maintaining some allelic diversity for at site selection to occur (@johnson2010best).   
+*Ex situ* germplasm collections, on the other hand, aim to maximize coverage of neutral genetic variation, the material which allows evolution a wide array of phenotypes to act upon, following the logic that no set of phenotypes are universally most fit, and the long term persistence of the species will require a wide base of standing diversity for selection to act upon. 
+
+Here we present two geospatial software packages to help curators refine and implement their collection goals, using free and open source software (FOSS) developed in the R programming language. 
+The first tool `safeHavens` (https://sagesteppe.github.io/safeHavens/), global in coverage, aims to maximize the putative coverage of neutral genetic variation across a species range using proxies: 1) geographic, 2) ecoregional, 3) environmental coverage of `ex situ` and restorations collections in areas lacking defined seed transfer zones, or where seed zones transfer zones may not align with the goals of restoration collections.
+The second tool, tailored to the Western United States, `eSTZwriter` (https://sagesteppe.github.io/eSTZwritR/) assists quantitative geneticists in producing standardized spatial data products describing areas for targeted seed collection and restoration planting which may be readily used by curators.  
+
+ (@havens2015seed, )
+
+# safeHavens
+
+Seed collection is an inherently costly activity, requiring both coordinating staff, field staff, and equiment expenses such as vehicles and fuel. 
+Endeavours to maximize the representation of adaptive potential and neutral genetic diversity requires minimizing the cost of field expenditures to distribute project funds across a greater taxonomic range of species. 
+To this end we have developed a variety of tools which are useful for partitioning the geographic, and environmental, space which species occupy to develop priority zones and spatial products which can be used to prioritize and communicate areas of interest to field crews. 
+
+The R package `safeHavens` provides 8 functions, with the suffix `Sample`, that partition either geographic or environmental space, and optionally return spatial data for sending to field crews.
+The functions that utilize purely geographic approaches include: `GridBasedSample`, `PointBasedSample`, `EqualAreaSample` and `IBDBasedSample`, as well as a `OpportunisticSample` which uses geography but incorporates the structuring of a design around existing collections. 
+`PolygonBasedSample` is able to utilize ecoregion or seed transfer zone (either pSTZ or eSTZ) spatial data to selected areas based on several user specified parameters. 
+For common species, a final function, `EnvironmentalBasedSample` will sample based on a species distibution model fit for the individual species, or species range. 
+
+Additionally, a function for sampling rare species based on occurrence data `KMedoidsBasedSample` is included, which can run on either geographic or environmental data, and allows for boostrap permutations around taxonomic, coordinate, and whether a population is still extent, uncertainty. 
+
+### Usage
+All functions require species occurrence data, such as from GBIF, and available through the `rgbif` package (maintained by ROpenSci). 
+Given the relatveily coarse nature of these analyses GBIF data should be sufficient for all taxa less rare species, which are likely to require data maintained by administrative bodies responsible for the management of rare species (e.g. NatureServe members, or in the United States various state and federal agencies). 
+
+Users are encouraged to explore the results from various functions to determine those they are interested in using, and for which species. 
+For eapmle taxa that they 
+
+
+### notes
+Journal: Applications in Plant Sciences
+editor: Robert L Barker, NPS Fort Collins CO
+reviewer 1: Beth Leger, UNR. 
+reviewer 2: Tony Falk, UAZ. 
