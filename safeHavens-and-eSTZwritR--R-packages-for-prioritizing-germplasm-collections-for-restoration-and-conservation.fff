@@ -1,0 +1,69 @@
+\begin{figure}
+\centering
+\includegraphics[width=0.75\textwidth,height=\textheight]{./figures/Wu-naut.jpg}
+\caption{Dissemination, proceeding clockwise from `Collections'. The
+first phase of collections includes the initial collection of germplasm
+from the wild, the most common starting point for both restoration and
+\emph{ex situ} conservation. The next two panels \emph{largely} refer to
+quantitative genetics approaches for the development of empirical seed
+transfer zones, while 'Dissemination` depicts the essential component
+for developing a curated collection of being able to convey priority
+areas to collector crews for a more targeted collection. These
+activities lead to the potential for agricultural or propagation
+increase of collected germplasm and the selection of materials for
+restoration plantings. By Emily Woodworth.}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth,height=\textheight]{./figures/filenames.png}
+\caption{File Naming. Three inconsistencies in file names discussed
+here, with the advised format for data sharing in green, and the least
+desirable condition in grey.}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth,height=\textheight]{./figures/fields.png}
+\caption{Field Names Shapefile. The three attributes of field names
+discussed here, with the most desirable condition in green, and the
+least desirable condition in grey.}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth,height=\textheight]{./figures/maps.png}
+\caption{Map Components (n = 20). Several essential cartographic
+elements - most notably a Title, a statement on data sources, and a
+legend for the seed zones, where missing from at least - or nearly half
+of the products inspected.}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth,height=\textheight]{./figures/DirectoryStructure.png}
+\caption{Directory Structure. Each directory is named in yellow, and
+spans the extent of variously coloured polygons. Individual files (or a
+set of files in the case of a shapefile) are depicted in black text
+within these directories.}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth,height=\textheight]{./figures/FileNamingConventions.png}
+\caption{File Naming. The four proposed components of a filename are
+highlighted in different colours, and with appropriate cases.}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth,height=\textheight]{./figures/FieldNames.png}
+\caption{Vector Data Field Attributes. The proposed field names for
+distributing vector data.}
+\end{figure}

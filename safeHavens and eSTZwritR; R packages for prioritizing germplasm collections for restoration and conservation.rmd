@@ -49,8 +49,10 @@ The second tool, tailored to the Western United States, `eSTZwriter` (https://sa
 
 # safeHavens
 
-Seed collection is an inherently costly activity, requiring both coordinating staff, field staff, and equiment expenses such as vehicles and fuel (Shriver et al. 2026). 
-Endeavours to maximize the representation of adaptive potential and neutral genetic diversity requires minimizing the cost of field expenditures to distribute project funds across a greater taxonomic range of species. 
+While accessioning and maintaining germplasm collections and *ex situ* and using agricultural or horticultural practices to develop propagules are cost efficient restoration conservation activities, the field work required to acquire even a minimal number of populations, and individuals from them, across a species range remains costly.
+Notable costs include the wages for field staff to perform the germplasm collection, and fuel to visit sites - generally repeatedly - to assess the size of the population, and conduct sampling at phenologically appropriate times. 
+
+Endeavors to maximize the representation of adaptive potential and neutral genetic diversity requires minimizing the cost of variable field expenditures to distribute project funds across as broad a range of species as can be afforded. 
 To this end we have developed a variety of tools which are useful for partitioning the geographic, and environmental, space which species occupy to develop priority zones and spatial products which can be used to prioritize and communicate areas of interest to field crews. 
 
 The R package `safeHavens` provides eight functions, with the suffix `Sample`, that partition either geographic or environmental space, and optionally return spatial data for sending to field crews.
