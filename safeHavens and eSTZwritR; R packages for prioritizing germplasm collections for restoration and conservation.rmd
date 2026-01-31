@@ -71,34 +71,32 @@ These clusters, represented by spatial data, can be used to design germplasm col
 
 ## Usage
 
-All functions require species occurrence data, such as from GBIF, and readily available and easy to integrate into usage with `safeHavens` through the `rgbif` package, although taxa requiring enhanced cleaning may benefit from the use of gatoRs [@chamberlain2017rgbif; @patten2024gators]. 
-Given the relatively coarse nature of these analyses GBIF data should be sufficient for all taxa less rare species, which are likely to require data maintained by administrative bodies responsible for the management of rare species (e.g. NatureServe members, or in the United States various state and federal agencies). 
-A mid-grade personal laptop is sufficient to carry out spatial analyses, and the the compute time to treat a thousand species should only be on the order of a day for the most complex approaches (REED, ACTUALLY SIMULATE THIS WITH ~100 TAXA), no paid data sources or software are required, and minimal knowledge of R should be sufficient. 
-
-Functions that utilize purely geographic distance include: `PointBasedSample`, `EqualAreaSample` and `IBDBasedSample`, as well as a `OpportunisticSample` which uses geography but existing collections and designs future collections around them. GENERAL OVERVIEW - 2 SENTENCES. 
+Functions that utilize geographic distance include: `PointBasedSample`, `EqualAreaSample` and `IBDBasedSample`, and `OpportunisticSample` which is derived from the `PointBasedSample` approach but designs additional sampling around existing collections.
+Rather than optimizing designs specifically for maximizing distances directly, they partition geographic space into relatively equally sized increments that collections should be made from within.
+These functions are all highly adaptable to support `n` collection areas, and a single collection per geographic unit. 
 A general vignette on the package, which covers these functions is available at [Getting Started](https://sagesteppe.github.io/safeHavens/articles/GettingStarted.html). 
 
-Environmental distance, relevant to the biology of individual species, is accomodated by `EnvironmentalBasedSample`, and its data preparation helpers: `elasticSDM`, `PostProcessSDM`, `RescaleRasters`, `writeSDMResults`. 
-These functionality generally aligns with the concept of isolation by environment...
-GENERAL OVERVIEW - 2 SENTENCES. 
-a vignette is available [Species Distribution Models](https://sagesteppe.github.io/safeHavens/articles/SpeciesDistributionModels.html)
-
-Resistance to geneflow is addressed by the function `IBRSurface` and its data preparation helpers: `buildResistanceSurface`, `populationResistance`, and requires the final sample draw to be generated using `PolygonBasedSample`. 
-The isolation by resistance workflow creates a *theoretical* surface, populated with user specified values, that represents the cost to movement of genetic material (e.g. fruits and seeds, and pollen) between populations, see @zeller2012estimating for caveats. 
+Landscape resistance to geneflow is modelled using the function `IBRSurface` and its data preparation helpers: `buildResistanceSurface`, `populationResistance`, and optionally the final sample draw to be generated using `PolygonBasedSample`. 
 A single surface can be used for a landscape, or surfaces can be parameterized for individual species. 
-However, given a lack of detailed knowledge on the dispersal ecology of many species, and in the absence of genetics data, we expect generalized surfaces for landscapes, rather than species interactions with landscape, to be the most often used.
+The isolation by resistance workflow creates a *theoretical* surface, populated with user specified values, that represents the cost to movement of genetic material (e.g. fruits and seeds, and pollen) between populations, see @zeller2012estimating for caveats. 
 A vignette covering the preparation of surfaces is available at [Isolation by Resistance](https://sagesteppe.github.io/safeHavens/articles/IsolationByResistance.html). 
 
-The function `PolygonBasedSample` works on either provisional or empirical seed transfer zones, ecoregion level data, and is required to finish a sample design under isolation by resistance based sampling. 
-`PolygonBasedSample` is able to incorporate multiple user specified decisions to maximize sample numbers in various strata based on their size, number of disconnected areas, or - when the data are available, temperature. 
-Accordingly, it can loosely accomodate the variables that went into the generation of seed transfer zones or ecoregions. 
+Environmental distance, akin to the concept of isolation by environment, tailoredto the biology of individual species, is accommodated by `EnvironmentalBasedSample`, and its data preparation helpers: `elasticSDM`, `PostProcessSDM`, `RescaleRasters`, `writeSDMResults`. 
+This workflow seeks to identify user supplied variables associated with species occurrences, and cluster the species range into *n* specific regions using these variables and hierarchical clustering approaches, optionally the surfaces can be resampled using `PolygonBasedSample`. 
+A vignette is available for this workstream at [Species Distribution Models](https://sagesteppe.github.io/safeHavens/articles/SpeciesDistributionModels.html). 
 
-Additionally, a function for sampling rare species based on occurrence data `KMedoidsBasedSample` is included, which can run on either geographic or environmental data, and allows for boostrap permutations around taxonomic, coordinate, and whether a population is still extent, uncertainty. GENERAL OVERVIEW - 2 SENTENCES. 
+`PolygonBasedSample` works on any type of polygon data, but is focused on supporting either provisional or empirical seed transfer zones, or ecoregion level data. 
+`PolygonBasedSample` is able to incorporate multiple user specified decisions to maximize sample numbers in various strata based on their size, number of disconnected areas, or - when the data are available, temperature. 
+Accordingly, it can loosely accommodate the variables that went into the generation of seed transfer zones or ecoregions. 
+A visual guide to these function is available at [Polygon Based Sample](ADD ME WITH UPDATED NAME/PAGE)
+
+Additionally, a function for sampling rare species based on occurrence data `KMedoidsBasedSample` is included, which can run on geographic, resistance, or environmental distances. 
+When using geographic distances as input, and if coordinate uncertainty data available, this function will jitter site coordinates within the measures of uncertainty so simulate actual population positions, it will also 'drop' populations that may be extinct, incorrectly identified, or of another taxon to give results that are resilient to these types of data imperection. 
+The function uses co-location network strength to identify a set of populations that minimizes the sum of distances in 'n' user specified groups. 
 A vignette is available [Rare Species](https://sagesteppe.github.io/safeHavens/articles/RareSpecies.html)
 
 A final function, that exists for creating cartographic boundaries to for use with mobile GIS software is `PrioritizeSample`, which creates concentric rings around the center of each sampling unit to try and guide collectors towards center regions of collection zones rather than extremes. 
 It is detailed only in a vignette that emulates the total process of designing an actual sample design for species in [Worked Example](https://sagesteppe.github.io/safeHavens/articles/WorkedExample.html). 
-
 
 ## Detailed Functionality 
 
