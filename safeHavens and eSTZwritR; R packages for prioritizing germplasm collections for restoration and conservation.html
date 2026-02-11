@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Reed Clark Benkendorf^1{1,2}, Brianna Wieferich^2, Sophie Taddeo^3, Chris Woolridge^2 ^1 Northwestern University, Evanston, Illinois 60208 USA ^2 Chicago Botanic Garden, 1000 Lake Cook Road, Glencoe Illinois 60022 USA ^3 Department of Environmental and Ocean Sciences, University of San Diego, San Diego, California 92110, USA">
+
+<title>safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/clipboard/clipboard.min.js"></script>
+<script src="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/quarto-html/quarto.js"></script>
+<script src="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/quarto-html/popper.min.js"></script>
+<script src="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/quarto-html/anchor.min.js"></script>
+<link href="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/quarto-html/quarto-syntax-highlighting-01c78b5cd655e4cd89133cf59d535862.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation_files/libs/bootstrap/bootstrap-abd341879a89d1f9b1903c44ebba7eff.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+</head><body class="fullcontent">\usepackage[markers]{endfloat}
+\usepackage{setspace}\doublespacing
+\usepackage{lineno}
+\linenumbers
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+
+
+
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Reed Clark Benkendorf<span class="math inline">\(^1{1,2}\)</span>, Brianna Wieferich<span class="math inline">\(^2\)</span>, Sophie Taddeo<span class="math inline">\(^3\)</span>, Chris Woolridge<span class="math inline">\(^2\)</span><br>
+<span class="math inline">\(^1\)</span> Northwestern University, Evanston, Illinois 60208 USA<br>
+<span class="math inline">\(^2\)</span> Chicago Botanic Garden, 1000 Lake Cook Road, Glencoe Illinois 60022 USA<br>
+<span class="math inline">\(^3\)</span> Department of Environmental and Ocean Sciences, University of San Diego, San Diego, California 92110, USA </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="abstract" class="level1">
+<h1>Abstract</h1>
+</section>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Current estimates suggest that 45% of flowering plant species are at risk of extinction <span class="citation" data-cites="bachman2024extinct isbell2023expert">(<a href="#ref-isbell2023expert" role="doc-biblioref">Isbell et al., 2023</a>; <a href="#ref-bachman2024extinct" role="doc-biblioref">Bachman et al., 2024</a>)</span>. Two growing responses to mitigate the loss of taxonomic and genetic diversity include habitat restoration for <em>in situ</em> conservation and the collection and storage of plant germplasm in <em>ex situ</em> collections <span class="citation" data-cites="heywood2017plant volis2010quasi westwood2021botanic">(<a href="#ref-volis2010quasi" role="doc-biblioref">Volis and Blecher, 2010</a>; <a href="#ref-heywood2017plant" role="doc-biblioref">Heywood, 2017</a>; <a href="#ref-westwood2021botanic" role="doc-biblioref">Westwood et al., 2021</a>)</span>. Ecological restoration has become a tool to enhance habitat quality in natural areas or to convert land back to natural areas to provide connectivity between remnant parcels, helping to preserve plant and other biodiversity <em>in situ</em> <span class="citation" data-cites="gann2019international">(<a href="#ref-gann2019international" role="doc-biblioref">Gann et al., 2019</a>)</span>. Long-term <em>ex situ</em> conservation is used when a species has, or is expected to experience, the loss or degradation of its habitat beneath thresholds that can support the species persistence in the wild <span class="citation" data-cites="mounce2017ex union2012integrated">(<a href="#ref-union2012integrated" role="doc-biblioref">Oldfield and Newton, 2012</a>; <a href="#ref-mounce2017ex" role="doc-biblioref">Mounce et al., 2017</a>)</span>. However, analogously to <em>ex situ</em> conservation - albeit on a different time scale, the development of native plant propagules for ecological restoration requires the collection, and agricultural amplification of germplasm to meet the volumes required for use in restortaion projects [SHRIVER et al.&nbsp;2026; <span class="citation" data-cites="wambugu2023role">Wambugu et al. (<a href="#ref-wambugu2023role" role="doc-biblioref">2023</a>)</span>].</p>
+<p>Central to attaining germplasm collections is the acquisition of adequate amounts of genetic diversity for a portion of the species range for <em>in situ</em> restoration or of the entire species for <em>ex situ</em> conservation [<span class="citation" data-cites="walters2021unique">Walters and Pence (<a href="#ref-walters2021unique" role="doc-biblioref">2021</a>)</span>; SHRIVER et al 2026]. Approaches for collecting germplasm from wild species for <em>in situ</em> restoration projects and <em>ex situ</em> in use by the nearly 1750 seed banks globally often follow a set of minimal rule-of-thumb guidelines developed from agricultural and population genetics studies <span class="citation" data-cites="hay2013advances westwood2021botanic">(<a href="#ref-hay2013advances" role="doc-biblioref">Hay and Probert, 2013</a>; <a href="#ref-westwood2021botanic" role="doc-biblioref">Westwood et al., 2021</a>)</span>. Currently, guidance exists for conservation and <em>in situ</em> restoration projects, the number of propagules that can be collected to safeguard the persistence of natural populations (i.e., avoid over-harvesting), the minimum number of individuals that need to be sampled per population, and the number of populations to sample per species to reach genetic diversity targets <span class="citation" data-cites="basey2015producing nevill2018ethical">(<a href="#ref-basey2015producing" role="doc-biblioref">Basey et al., 2015</a>; <a href="#ref-nevill2018ethical" role="doc-biblioref">Nevill et al., 2018</a>)</span>. AND guidance on the geographic structure of where to move restoration collections to and from to avoid using maladapted phenotypes at a restoration site <span class="citation" data-cites="vander2010question">(<a href="#ref-vander2010question" role="doc-biblioref">Vander Mijnsbrugge et al., 2010</a>, CITE)</span>. However, a variety of goals exist at the institutional, programmatic, and bio-regional organizational levels, as well as opinions among curators, which have fostered tailored strategies beyond rule-of-thumb guidelines <span class="citation" data-cites="guerrant2014sampling">(<a href="#ref-guerrant2014sampling" role="doc-biblioref">Guerrant Jr et al., 2014</a>)</span>. Furthermore, these minimal guidelines do not guarantee alignment or achievement of goals for all observed species and population genetic structures or population vital rates because of nuances in the biology and ecology of individual species <span class="citation" data-cites="bucharova2025assessing hofner2025spatial hoban2020taxonomic whitlock2016consequences">(<a href="#ref-whitlock2016consequences" role="doc-biblioref">Whitlock et al., 2016</a>; <a href="#ref-hoban2020taxonomic" role="doc-biblioref">Hoban et al., 2020</a>; <a href="#ref-bucharova2025assessing" role="doc-biblioref">Bucharova et al., 2025</a>; <a href="#ref-hofner2025spatial" role="doc-biblioref">Höfner et al., 2025</a>)</span>.</p>
+<p>However, the germplasm collections desired for ecological restoration and <em>ex situ</em> conservation differ in a key attribute. Restoration collections seek to maximize the likelihood of restoration success at sites in a defined focal area and time and seek to identify populations with the highest chance of doing so while maintaining some allelic diversity for at site selection <span class="citation" data-cites="johnson2010best">(<a href="#ref-johnson2010best" role="doc-biblioref">Johnson et al., 2010</a>)</span>.<br>
+<em>Ex situ</em> germplasm collections, on the other hand, aim to maximize coverage of neutral genetic variation, the material which allows evolution a wide array of phenotypes to act upon, following the logic that no set of phenotypes are universally most fit, and the long term persistence of the species will require a wide base of standing diversity for selection to act upon.</p>
+<p>Here, we present two geospatial software packages to help curators refine and implement their collection goals - using free and open-source software (FOSS) developed in the R programming language, and requiring minimal familiarity with R to use. The first tool, <code>safeHavens</code> (https://sagesteppe.github.io/safeHavens/), which is global in coverage, aims to maximize the putative coverage of neutral genetic variation across the entirety, or subsets of, a species range using proxies: 1) geographic, 2) ecoregional, and 3) environmental coverage of <em>ex situ</em> and restoration collections in areas lacking defined seed transfer zones, or in scenarios where seed transfer zones may not align with the goals of restoration collections. The second tool, tailored to the Western United States - but globally applicable, <code>eSTZwriter</code> (https://sagesteppe.github.io/eSTZwritR/) assists quantitative geneticists in producing standardized spatial data products describing areas for targeted seed collection and restoration planning, which may be readily used by curators.</p>
+<ol class="example" type="1">
+<li></li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./figures/Wu-naut.jpg" class="img-fluid figure-img" style="width:75.0%"></p>
+<figcaption>Dissemination, proceeding clockwise from ‘Collections’. The first phase of collections includes the initial collection of germplasm from the wild, the most common starting point for both restoration and <em>ex situ</em> conservation. The next two panels <em>largely</em> refer to quantitative genetics approaches for the development of empirical seed transfer zones, while ’Dissemination` depicts the essential component for developing a curated collection of being able to convey priority areas to collector crews for a more targeted collection. These activities lead to the potential for agricultural or propagation increase of collected germplasm and the selection of materials for restoration plantings. By Emily Woodworth.</figcaption>
+</figure>
+</div>
+</section>
+<section id="safehavens" class="level1">
+<h1>safeHavens</h1>
+<p>While accessioning and maintaining germplasm collections <em>ex situ</em> to develop propagules for restoration and conservation activities is cost-effective, the acquisition of collections from the wild across a species range, especially from many populations and individuals within them, remains expensive due to costs associated with field work and staffing [<span class="citation" data-cites="li2009science">Li and Pritchard (<a href="#ref-li2009science" role="doc-biblioref">2009</a>)</span>; CITE: field work is expensive- can we expert pers. comm Andrea or Kay on this?). Hence, the sampling of germplasm from a species aims to maximize the total genetic diversity across its range, or the suitability of populations for use in restorations, while minimizing the number of populations sampled. However, systems for guiding and measuring progress relative to this principle are absent for rare taxa, and for common taxa rely on data sets that may not relate to an individual species biology or ecology (e.g., the use of provisional STZs or ecoregions), or require considerable research to develop (eSTZs).</p>
+<p>Critiques of provisional seed transfer zones, the most used method in the USA include <span class="citation" data-cites="durka2025assessment">(<a href="#ref-durka2025assessment" role="doc-biblioref">Durka et al., 2025</a>,)</span>… Limitations of alternatively proposed systems, such as sampling along ecoregions include (ask Chris and Dave, but also granularity)…. Empirical Seed Transfer Zones, face limitations in their development as they require considerable empirical data, itself facing multiple challenges towards its collection, and given their cost are unlikely to be developed for the full range of species desired by restoration ecologists (cool guy from NV I like). Indeed, recent systems for selecting seed sources for specific restoration site have moved to developing computational methods for selecting material using existing data <span class="citation" data-cites="st2022seedlot silva2025cosst">(<a href="#ref-st2022seedlot" role="doc-biblioref">St. Clair et al., 2022</a>; <a href="#ref-silva2025cosst" role="doc-biblioref">Silva et al., 2025</a>)</span>.<br>
+However, these systems require that the restoration site be identified <em>before</em> treatments need to be applied, knowledge that exists for planned restoration projects or the development of material for a particular conservation unit, but that would require a lag of several years of germplasm material development for restorations after natural disturbances - especially across large geographic domains or reserves (Shriver et al.&nbsp;2026).</p>
+<p>Accordingly, we present <code>safeHavens</code> a landscape genetics inspired (?) package for R that helps curators develop taxon specific sampling schemes to maximize either the neutral genetic diversity of taxa using null models or have suitable candidate material for a restoration site available.<br>
+safeHavens partitions species ranges into geographically constrained groups by utilizing clustering of three types of distances: geographic, or resistance to gene flow, or environmental, each of which has been empirically shown to influence species genetic structures <span class="citation" data-cites="mcrae2006isolation slatkin1993isolation wang2014isolation">(<a href="#ref-slatkin1993isolation" role="doc-biblioref">Slatkin, 1993</a>; <a href="#ref-mcrae2006isolation" role="doc-biblioref">McRae, 2006</a>; <a href="#ref-wang2014isolation" role="doc-biblioref">Wang and Bradburd, 2014</a>)</span>. These clusters, represented by spatial data, can be used to design germplasm collection endeavors, assigning a desired number of target samples to each cluster. The spatial data generated by this process can then be sent to field crews to guide both the planning and implementation of collections.</p>
+<section id="usage" class="level2">
+<h2 class="anchored" data-anchor-id="usage">Usage</h2>
+<p>Functions that utilize geographic distance include: <code>PointBasedSample</code>, <code>EqualAreaSample</code> and <code>IBDBasedSample</code>, and <code>OpportunisticSample</code> which is derived from the <code>PointBasedSample</code> approach but designs additional sampling around existing collections. Rather than optimizing designs specifically for maximizing distances directly, they partition geographic space into relatively equally sized increments that collections should be made from within. These functions are all highly adaptable to support <code>n</code> collection areas, and a single collection per geographic unit. A general vignette on the package, which covers these functions is available at <a href="https://sagesteppe.github.io/safeHavens/articles/GettingStarted.html">Getting Started</a>.</p>
+<p>Landscape resistance to geneflow is modelled using the function <code>IBRSurface</code> and its data preparation helpers: <code>buildResistanceSurface</code>, <code>populationResistance</code>, and optionally the final sample draw to be generated using <code>PolygonBasedSample</code>. A single surface can be used for a landscape, or surfaces can be parameterized for individual species. The isolation by resistance workflow creates a <em>theoretical</em> surface, populated with user specified values, that represents the cost to movement of genetic material (e.g.&nbsp;fruits and seeds, and pollen) between populations, see <span class="citation" data-cites="zeller2012estimating">Zeller et al. (<a href="#ref-zeller2012estimating" role="doc-biblioref">2012</a>)</span> for caveats. A vignette covering the preparation of surfaces is available at <a href="https://sagesteppe.github.io/safeHavens/articles/IsolationByResistance.html">Isolation by Resistance</a>.</p>
+<p>Environmental distance, akin to the concept of isolation by environment, tailoredto the biology of individual species, is accommodated by <code>EnvironmentalBasedSample</code>, and its data preparation helpers: <code>elasticSDM</code>, <code>PostProcessSDM</code>, <code>RescaleRasters</code>, <code>writeSDMResults</code>. This workflow seeks to identify user supplied variables associated with species occurrences, and cluster the species range into <em>n</em> specific regions using these variables and hierarchical clustering approaches, optionally the surfaces can be resampled using <code>PolygonBasedSample</code>. A vignette is available for this workstream at <a href="https://sagesteppe.github.io/safeHavens/articles/SpeciesDistributionModels.html">Species Distribution Models</a>.</p>
+<p><code>PolygonBasedSample</code> works on any type of polygon data, but is focused on supporting either provisional or empirical seed transfer zones, or ecoregion level data. <code>PolygonBasedSample</code> is able to incorporate multiple user specified decisions to maximize sample numbers in various strata based on their size, number of disconnected areas, or - when the data are available, temperature. Accordingly, it can loosely accommodate the variables that went into the generation of seed transfer zones or ecoregions. A visual guide to these function is available at <a href="ADD%20ME%20WITH%20UPDATED%20NAME/PAGE">Polygon Based Sample</a></p>
+<p>Additionally, a function for sampling rare species based on occurrence data <code>KMedoidsBasedSample</code> is included, which can run on geographic, resistance, or environmental distances. When using geographic distances as input, and if coordinate uncertainty data available, this function will jitter site coordinates within the measures of uncertainty so simulate actual population positions, it will also ‘drop’ populations that may be extinct, incorrectly identified, or of another taxon to give results that are resilient to these types of data imperection. The function uses co-location network strength to identify a set of populations that minimizes the sum of distances in ‘n’ user specified groups. A vignette is available <a href="https://sagesteppe.github.io/safeHavens/articles/RareSpecies.html">Rare Species</a></p>
+<p>A final function, that exists for creating cartographic boundaries to for use with mobile GIS software is <code>PrioritizeSample</code>, which creates concentric rings around the center of each sampling unit to try and guide collectors towards center regions of collection zones rather than extremes. It is detailed only in a vignette that emulates the total process of designing an actual sample design for species in <a href="https://sagesteppe.github.io/safeHavens/articles/WorkedExample.html">Worked Example</a>.</p>
+</section>
+<section id="detailed-functionality" class="level2">
+<h2 class="anchored" data-anchor-id="detailed-functionality">Detailed Functionality</h2>
+<p>The isolation by resistance workflow is separated into three main phases to allow users to review, modify, and tailor intermediate objects. Resistance surface rasters are created by <code>buildResistanceSurface</code>, followed by the sampling of these surfaces to create distance matrices using <code>populationResistance</code>, and finally, the classification of the species range into clusters with less resistance to movement within than between them by <code>IBRSurface</code>, the polygons from <code>IBRSurface</code> are then submitted to the general sampling function <code>PolygonBasedSample</code>. A cost surface raster that represents resistance to gene flow for the species across the landscape, used for calculating least-cost distances between sites, is parameterized in <code>buildResistanceSurface</code> it natively supports layers for oceans, lakes, rivers, topographic ruggedness, and a species distribution model’s probability surface, but also allows users to incorporate additional features and weights as desired.*** Pairwise distances across the cost surface and between randomly sampled sites across the buffered species range are used to create a distance matrix for clustering in <code>populationResistance</code>. Sites are hierarchically clustered into <em>n</em> groups, and pixels of their buffered species range are iteratively assigned to each cluster using <code>IBRSurface</code>, using NbClust with a silhouette method [NCLUST]. <code>IBRSurface</code> will return a polygon sf object of all clusters that work with <code>PolygonBasedSample</code> to assign a number of desired collections to each identified cluster.</p>
+<p>The data preparation for the <code>EnvironmentalBasedSample</code> is also compartmentalized into several functions, allowing users to review, modify, and save intermediate outputs. A species distribution model, using user-specific independent variables (raster format) supplemented with internally derived low-order PCNM surfaces, with internal occurrence data thinning and pseudo-absence generation, spatial cross-validation folds, and automatic variable selection using elastic net regression and recursive feature elimination, is prepared using <code>elasticSDM</code> <span class="citation" data-cites="naimi2016sdm aiello-lammens2015spthin meyer2025cast kuhn2008caret tay2023elasticnet oksanen2025vegan">(<a href="#ref-kuhn2008caret" role="doc-biblioref">Kuhn and Max, 2008</a>; <a href="#ref-aiello-lammens2015spthin" role="doc-biblioref">Aiello-Lammens et al., 2015</a>; <a href="#ref-naimi2016sdm" role="doc-biblioref">Naimi and Araujo, 2016</a>; <a href="#ref-tay2023elasticnet" role="doc-biblioref">Tay et al., 2023</a>; <a href="#ref-meyer2025cast" role="doc-biblioref">Meyer et al., 2025</a>; <a href="#ref-oksanen2025vegan" role="doc-biblioref">Oksanen et al., 2025</a>)</span>. The predictions of habitat suitability are converted from probabilities into a binary surface of presence/absence using a user-specified threshold metric, and areas of known occupancy are optionally ‘burned’ back onto this raster surface, the result being a surface that tries to maximize coverage of the species’ occupied habitat, using <code>PostProcessSDM</code> <span class="citation" data-cites="hijman2026terra hijman2024dismo">(<a href="#ref-hijman2024dismo" role="doc-biblioref">Hijmans et al., 2024</a>; <a href="#ref-hijman2026terra" role="doc-biblioref">Hijmans, 2026</a>)</span>. The rasters, used as independent variables, and with terms included in the final sdm model, are then rescaled, based on their contributions (beta-coefficients) to the model, for use in identifying clusters of the species range that experience more similar relevant habitat characteristics than other portions, using <code>RescaleRasters</code>. Results from these processes may then be saved using <code>writeSDMresults</code>. The germplasm collection sample is implemented by <code>EnvironmentalBasedSample</code>, which samples and clusters n locations across the raster stack, a k-nearest neighbor classifier is then trained on a relatively class-balanced resampling off these clusters, and spatial clusters are identified using predictions from it <span class="citation" data-cites="venables2002appstats">(<a href="#ref-venables2002appstats" role="doc-biblioref">Venables and Ripley, 2002</a>)</span>. If a user desires more than one germplasm collection per cluster, they may use <code>PolygonBasedSample</code> with the output from <code>EnvironmentalBasedSample</code>.</p>
+<p><code>KMedoidsBasedSample</code> is intended for use with rare species and maximizes the geographic coverage (by minimizing the sum of dissimilarities) of <em>n</em> collections by identifying individual populations to sample, in consideration of common data quality issues in occurrence data. <code>KMedoidsBasedSample</code> is the only function in <code>safeHavens</code> that directly models raw population data rather than generalized polygonal geometries around them. From user-specified data, occurrence records that are to undergo coordinate jittering, and any that may undergo population dropout (due to either misidentifications, conflicting taxonomy, or local extinction), are identified. A user-specified number of bootstrap simulations permute eligible sites, and updated distance matrices are fed into K-medoids repeatedly, within each run multiple restarts are allowed, to minimize the cost of the solution for each iteration <span class="citation" data-cites="maechler2025cluster">(<a href="#ref-maechler2025cluster" role="doc-biblioref">Maechler et al., 2025</a>)</span>. Across all bootstrap iterations, each unique combination of candidate sites (set) is counted to identify the network of sites with the lowest cost (highest co-location strength), and the individual sites within this network are ordered by the number of times they were returned across all bootstrap simulations.</p>
+</section>
+</section>
+<section id="estzwritr" class="level1">
+<h1>eSTZwritR</h1>
+<p>Empirical seed transfer zones (eSTZs) are gaining popularity among restoration practitioners as tools to identify the most appropriate seed source for a species at a restoration site <span class="citation" data-cites="mckay2005local">(<a href="#ref-mckay2005local" role="doc-biblioref">McKay et al., 2005</a>)</span>. eSTZs are becoming more widely used for two primary reasons: 1) they are based on empirical data, such as phenotypes in a common garden, and 2) there are generally fewer zones than provisional seed transfer zones, thereby reducing the number of lineages that require cultivation in agricultural settings. Although popular, the development of eSTZs for a species is a costly and time-consuming process, most often involving common gardens or genetic studies, with many populations from across the species range incorporated as samples <span class="citation" data-cites="kramer2015assessing">(<a href="#ref-kramer2015assessing" role="doc-biblioref">Kramer et al., 2015</a>)</span>.</p>
+<p>While practices for developing eSTZs are becoming more defined, to our knowledge, no standards exist for <em>sharing</em> eSTZ results (Supplemental 1). Although eSTZs are produced by a handful of research of groups, inconsistencies vary across the spatial data products used to report and share eSTZs.</p>
+<p>The success of a restoration project relies on the timely application of techniques that are suitable for the site at hand. Hence, the dissemination of ideas during and after a restoration project is the best opportunity to improve restoration outcomes (Figure 1). However, spatial data are notoriously complex and difficult to transmit, historically requiring specialised software, and spatial data require both written and geographic data (e.g., coordinates and relations between them) in the form of spatial data products (e.g., rasters and shapefiles) to accurately convey their meaning. Given the relative complexity of communicating precise spatial information, standards should exist to ensure not only its accuracy and precision but also its ease of interpretation and use.</p>
+<section id="software" class="level2">
+<h2 class="anchored" data-anchor-id="software">Software</h2>
+<p>To make these suggestions easy to implement we have created an R package, eSTZwritR (pronounced ‘easy rider’), which can implement all of them, less the statistical processing, with minimal user inputs. The package is installable from GitHub https://github.com/sagesteppe/eSTZwritR and has a GitHub Pages website (https://sagesteppe.github.io/eSTZwritR/) for users interested in better understanding its functionality, and which includes supplemental figures and details not discussed here.</p>
+<p>The package requires only five functions to produce a directory with the contents discussed above, with minimal data entry. Most importantly, the entries are well outlined and easily entered without requiring close attention to detail. These results should allow for simple utilization of existing empirical seed-transfer zone resources. This software was designed based on a review of the data sets below…</p>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<p>Using 23 sets of eSTZs produced for 22 taxa, across the western United States, we showed that most of the spatial data developed and disseminated to share the results of an eSTZ are inconsistent (Supplemental 1). We have already observed significant hindrances to the uptake of these data at the practitioner level and searched for consensus within these data. Subsequently, using any consensus (wisdom of the masses) from these data combined with standard conventions of data sharing, we present a set of guiding standards for researchers in the United States to make the results more consistent.</p>
+<p>We conducted a review of all eSTZs on the Western Wildland Environmental Threat Assessment Center (WWETAC) website as of May 1, 2024 (https://research.fs.usda.gov/pnw/products/dataandtools/datasets/seed-zone-gis-data). Each data product (file name structure, field naming conventions, and directory structure) was manually scored, and all analyses were performed in R version 4.2.1.</p>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./figures/filenames.png" class="img-fluid figure-img" style="width:50.0%"></p>
+<figcaption>File Naming. Three inconsistencies in file names discussed here, with the advised format for data sharing in green, and the least desirable condition in grey.</figcaption>
+</figure>
+</div>
+<p>In Figures 2 through 4, we present inconsistencies that we believe, or have observed, to interfere with practitioners’ workflows. We encountered considerable inconsistencies within file names (Figure 2), in directory structure and naming (Figure 3), and cartographic elements of the 20 maps available (Figure 4). While some consensus existed around the use of USDA NRCS-Plants codes for denoting the taxon contained in the file (Figure 2), the lack of file names mentioning what attribute about the taxon they contained (e.g.&nbsp;‘zones,’ ‘seed_zone,’ ‘sz’), and the lack of specified geographic extents can make determining the specifics of the file difficult unless it is explicitly opened in a Geographic Information System (GIS) software.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./figures/fields.png" class="img-fluid figure-img" style="width:50.0%"></p>
+<figcaption>Field Names Shapefile. The three attributes of field names discussed here, with the most desirable condition in green, and the least desirable condition in grey.</figcaption>
+</figure>
+</div>
+<p>The naming of the fields (columns) within vector data file presented the most problematic results (Figure 3), here we focus only on three inconsistences. Different uses of polygon geometry were implemented to represent the individual seed transfer zones, that is, sometimes all portions of a seed transfer zone, when at least some components are disconnected, where stored within the same object or row (a multipolygon). At other times, each discontinuous portion of the range was stored as its own polygon. For most infrequent Geographic Information System (GIS) users, we observed that multipolygons can be confusing and require them to use several moderately advanced spatial techniques to interact with. Surprisingly, within each shapefile, the field denoting the seed zones was often ambiguously labelled or entirely lacking any indication (Figure 3). In several instances, it took several minutes to determine which field was the seed zone by toggling through and visualizing many fields, despite us having already interfaced with all of these products multiple times.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./figures/maps.png" class="img-fluid figure-img" style="width:50.0%"></p>
+<figcaption>Map Components (n = 20). Several essential cartographic elements - most notably a Title, a statement on data sources, and a legend for the seed zones, where missing from at least - or nearly half of the products inspected.</figcaption>
+</figure>
+</div>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<p>Some consensus exists among eSTZ developers for a range of attributes related to the distribution of data products. Combining these opinions with best practices for data sharing and experience as users of each of the existing empirical products results in the following recommendations.</p>
+<section id="directory-structure" class="level3">
+<h3 class="anchored" data-anchor-id="directory-structure">Directory Structure</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./figures/DirectoryStructure.png" class="img-fluid figure-img" style="width:50.0%"></p>
+<figcaption>Directory Structure. Each directory is named in yellow, and spans the extent of variously coloured polygons. Individual files (or a set of files in the case of a shapefile) are depicted in black text within these directories.</figcaption>
+</figure>
+</div>
+<p>eSTZs should be distributed using a predictable directory structure that allows users to be immediately familiar with where to find the content (Figure 5). We recommend that all directories (folders) have two main subdirectories (Figure 5), one containing the essential data products, preferably in both raster and vector data formats (<em>see ‘Data Formats’</em>). The second directory contains information related to the product, including a formatted citation for data use, a map for quick reference, and any materials describing the development of the product, both as a paper and a text file of quick metadata attributes.</p>
+</section>
+<section id="file-naming" class="level3">
+<h3 class="anchored" data-anchor-id="file-naming">File Naming</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./figures/FileNamingConventions.png" class="img-fluid figure-img" style="width:50.0%"></p>
+<figcaption>File Naming. The four proposed components of a filename are highlighted in different colours, and with appropriate cases.</figcaption>
+</figure>
+</div>
+<p>The files within the directory should follow an easily interpretable naming convention that allows users to import todata various softwares while also describing the essential attributes of the data product. We recommend (Figure 6) each file name has three main components. The first component is the USDA PLANTS code, and the second is the method used to develop the STZ - currently one of ‘g’, ‘cg’, ‘cm’ (for genetic, common garden, and climate matched, respectively), and the final is up to the two main regions which the product overlaps. In the United States, we recommend the use of the 12 Department of Interior regions as they cover contiguous geographic expanses, are few enough to be easily remembered, and balance L2 Omernik ecoregions with easier to remember state lines. However, in other nations, the use of ecoregions may be more desirable.</p>
+</section>
+<section id="maps" class="level3">
+<h3 class="anchored" data-anchor-id="maps">Maps</h3>
+<p>Maps of the data product should be included in the ‘Information’ directory. Many questions about eSTZs can be answered quickly and simply by a practitioner consulting a map saved as a PDF with the essential cartographic components; fortunately most developers already supply these. We recommend that each map contains the following elements: north arrow, scale bar, state borders, geographically relevant cities, coordinate reference system information, sensible categorical color schemes for the seed zones (e.g.&nbsp;from ColorBrewer https://colorbrewer2.org), a legend, the taxons name as a title, and the maps theme (‘Seed Transfer Zones’) as a subtitle.</p>
+</section>
+<section id="data-formats" class="level3">
+<h3 class="anchored" data-anchor-id="data-formats">Data Formats</h3>
+<p>We recommend that the spatial data associated with an eSTZ be distributed using both popular spatial data models, vector and raster. For vector data, we advocate the continued usage of the shapefile format, whereas for raster data, we propose the use of geoTIFFs (‘tifs,’ the. tif extension). In our experience, tifs seem to be the most widely used raster data models in ecology for non-time series data, and are supported by effectively all GIS software.</p>
+</section>
+<section id="vector-data-field-attributes" class="level3">
+<h3 class="anchored" data-anchor-id="vector-data-field-attributes">Vector Data Field Attributes</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./figures/FieldNames.png" class="img-fluid figure-img" style="width:50.0%"></p>
+<figcaption>Vector Data Field Attributes. The proposed field names for distributing vector data.</figcaption>
+</figure>
+</div>
+<p>The order of the fields (or columns) of the vector data should follow a predictable pattern (Figure 7), allowing humans to interact with the data in a graphical user interface (GUI) to quickly detect their field of interest.</p>
+<p>We recommend that each vector file have at least four fields in the following order and of the following data types. 1) The numeric integer (ID) a unique number associated with each individual polygon in the file.<br>
+2) Seed Zone (numeric integer) a unique identifier for each of the eSTZs delineated by the product developers, which allows for quick filtering of the data based on a simple numeric value that is difficult to misspecify.<br>
+3) SZName (character): a human-developed name for the zone that may refer to an axis of a principal component analysis, for example, ‘LOW MEDIUM LOW’, or be defined by the product developers. We propose that semi-informative names should be developed before data distribution to help practitioners more easily convey important attributes.<br>
+4) AreaAcres (numeric - integer) of each polygon.</p>
+<p>In addition to these standard field naming and placement conventions, we recommend a series of standards for the contents within these essential fields and how to format any additional fields relevant to the project (see package website).</p>
+</section>
+</section>
+</section>
+<section id="discussion-1" class="level1">
+<h1>Discussion</h1>
+<p>Both packages are intended to increase the availability of native germplasm to increase the chances of success for terrestrial restoration and <em>ex situ</em> conservation. safeHavens supplies curators, and planners, with a set of tools to clearly determine options for specific sampling programs, which may be used for evaluating nad reporting progress towards conservation goals, as well as guiding field sampling activities. eSTZwritR helps research groups communicate and share the results of their findings wih germplasm curators and these curators with field crews, and restoration ecologists with loosely determing seed lots although tools such as <em>Seed Lot Selection tools</em> and AWESOME SA PAPER are now preferrable for most of these applications.</p>
+<p>Both packages ensure that curators and groups do not require traditionally expensive Geographic Information System software, and are able to be readily modified and extended for various goals and utilities.</p>
+</section>
+<section id="author-contributions" class="level1">
+<h1>Author Contributions</h1>
+<p>R.C.B. conceived of the ideas, developed the software, and wrote the manuscript. B.W. contributed to the conceptualization of the eSTZwritR package, and collected all data for analysis of existing eSTZ products, and contributed to writing the manuscript.</p>
+</section>
+<section id="orcid" class="level1">
+<h1>ORCID</h1>
+<p>Reed Benkendorf https://orcid.org/0000-0003-3110-6687<br>
+Sophie Taddeo https://orcid.org/0000-0002-7789-1417</p>
+</section>
+<section id="acknowledgements" class="level1">
+<h1>Acknowledgements</h1>
+<p>The Bureau of Land Management for partially funding the developement of these tools through work contracted to the Chicago Botanic Garden. Emily Woodworth for creating the ‘Dissemination’ figure.</p>
+</section>
+<section id="literature-cited" class="level1">
+<h1>LITERATURE CITED</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-aiello-lammens2015spthin" class="csl-entry" role="listitem">
+Aiello-Lammens, M. E., R. A. Boria, A. Radosavljevic, and B. Vilela. 2015. <a href="https://onlinelibrary.wiley.com/doi/10.1111/ecog.01132"><span class="nocase">spThin</span>: An <span>R</span> package for spatial thinning of species occurrence records for use in ecological niche models</a>. <em>Ecography</em> 38: 541–545.
+</div>
+<div id="ref-bachman2024extinct" class="csl-entry" role="listitem">
+Bachman, S. P., M. J. M. Brown, T. C. C. Leão, E. Nic Lughadha, and B. E. Walker. 2024. Extinction risk predictions for the world’s flowering plants to support their conservation. <em>New Phytologist</em> 242: 797–808. https://doi.org/<a href="https://doi.org/10.1111/nph.19592">https://doi.org/10.1111/nph.19592</a>
+</div>
+<div id="ref-basey2015producing" class="csl-entry" role="listitem">
+Basey, A. C., J. B. Fant, and A. T. Kramer. 2015. Producing native plant materials for restoration: 10 rules to collect and maintain genetic diversity. <em>Native Plants Journal</em> 16: 37–53.
+</div>
+<div id="ref-bucharova2025assessing" class="csl-entry" role="listitem">
+Bucharova, A., O. Bossdorf, J. Scheepens, and R. Salguero-Gómez. 2025. Assessing limits of sustainable seed harvest in wild plant populations. <em>Conservation Biology</em>: e70075.
+</div>
+<div id="ref-durka2025assessment" class="csl-entry" role="listitem">
+Durka, W., S. G. Michalski, J. Höfner, A. Bucharova, F. Kolář, C. M. Müller, C. Oberprieler, et al. 2025. Assessment of genetic diversity among seed transfer zones for multiple grassland plant species across germany. <em>Basic and Applied Ecology</em> 84: 50–60.
+</div>
+<div id="ref-gann2019international" class="csl-entry" role="listitem">
+Gann, G. D., T. McDonald, B. Walder, J. Aronson, C. R. Nelson, J. Jonson, J. G. Hallett, et al. 2019. International principles and standards for the practice of ecological restoration. <em>Restoration Ecology. 27 (S1): S1-S46.</em> 27: S1–S46.
+</div>
+<div id="ref-guerrant2014sampling" class="csl-entry" role="listitem">
+Guerrant Jr, E. O., K. Havens, and P. Vitt. 2014. Sampling for effective ex situ plant conservation. <em>International Journal of Plant Sciences</em> 175: 11–20.
+</div>
+<div id="ref-hay2013advances" class="csl-entry" role="listitem">
+Hay, F. R., and R. J. Probert. 2013. Advances in seed conservation of wild plant species: A review of recent research. <em>Conservation physiology</em> 1: cot030.
+</div>
+<div id="ref-heywood2017plant" class="csl-entry" role="listitem">
+Heywood, V. H. 2017. Plant conservation in the anthropocene–challenges and future prospects. <em>Plant diversity</em> 39: 314–330.
+</div>
+<div id="ref-hijman2026terra" class="csl-entry" role="listitem">
+Hijmans, R. J. 2026. Terra: Spatial data analysis. <a href="https://doi.org/10.32614/CRAN.package.terra">https://doi.org/10.32614/CRAN.package.terra</a>
+</div>
+<div id="ref-hijman2024dismo" class="csl-entry" role="listitem">
+Hijmans, R. J., S. Phillips, J. Leathwick, and J. Elith. 2024. Dismo: Species distribution modeling. <a href="https://doi.org/10.32614/CRAN.package.dismo">https://doi.org/10.32614/CRAN.package.dismo</a>
+</div>
+<div id="ref-hoban2020taxonomic" class="csl-entry" role="listitem">
+Hoban, S., T. Callicrate, J. Clark, S. Deans, M. Dosmann, J. Fant, O. Gailing, et al. 2020. Taxonomic similarity does not predict necessary sample size for ex situ conservation: A comparison among five genera. <em>Proceedings of the Royal Society B</em> 287: 20200102.
+</div>
+<div id="ref-hofner2025spatial" class="csl-entry" role="listitem">
+Höfner, J., A. Bucharova, W. Durka, and S. G. Michalski. 2025. Spatial patterns of genomic variation and genomic offset in a common grassland plant and their relation to seed transfer zones. <em>Ecology and Evolution</em> 15: e72152.
+</div>
+<div id="ref-isbell2023expert" class="csl-entry" role="listitem">
+Isbell, F., P. Balvanera, A. S. Mori, J.-S. He, J. M. Bullock, G. R. Regmi, E. W. Seabloom, et al. 2023. Expert perspectives on global biodiversity loss and its drivers and impacts on people. <em>Frontiers in Ecology and the Environment</em> 21: 94–103.
+</div>
+<div id="ref-johnson2010best" class="csl-entry" role="listitem">
+Johnson, R., L. Stritch, P. Olwell, S. Lambert, M. E. Horning, and R. Cronn. 2010. What are the best seed sources for ecosystem restoration on BLM and USFS lands? <em>Native Plants Journal</em> 11: 117–131.
+</div>
+<div id="ref-kramer2015assessing" class="csl-entry" role="listitem">
+Kramer, A. T., D. J. Larkin, and J. B. Fant. 2015. Assessing potential seed transfer zones for five forb species from the <span>G</span>reat <span>B</span>asin <span>F</span>loristic <span>R</span>egion, <span>USA</span>. <em>Natural Areas Journal</em> 35: 174–188.
+</div>
+<div id="ref-kuhn2008caret" class="csl-entry" role="listitem">
+Kuhn, and Max. 2008. Building predictive models in r using the caret package. <em>Journal of Statistical Software</em> 28: 1–26. <a href="https://doi.org/10.18637/jss.v028.i05">https://doi.org/10.18637/jss.v028.i05</a>
+</div>
+<div id="ref-li2009science" class="csl-entry" role="listitem">
+Li, D.-Z., and H. W. Pritchard. 2009. The science and economics of ex situ plant conservation. <em>Trends in plant science</em> 14: 614–621.
+</div>
+<div id="ref-maechler2025cluster" class="csl-entry" role="listitem">
+Maechler, M., P. Rousseeuw, A. Struyf, M. Hubert, and K. Hornik. 2025. <a href="https://CRAN.R-project.org/package=cluster">Cluster: Cluster analysis basics and extensions</a>.
+</div>
+<div id="ref-mckay2005local" class="csl-entry" role="listitem">
+McKay, J. K., C. E. Christian, S. Harrison, and K. J. Rice. 2005. <span>“How local is local?”</span>—a review of practical and conceptual issues in the genetics of restoration. <em>Restoration Ecology</em> 13: 432–440.
+</div>
+<div id="ref-mcrae2006isolation" class="csl-entry" role="listitem">
+McRae, B. H. 2006. Isolation by resistance. <em>Evolution</em> 60: 1551–1561.
+</div>
+<div id="ref-meyer2025cast" class="csl-entry" role="listitem">
+Meyer, H., C. Milà, M. Ludwig, J. Linnenbrink, and F. Schumacher. 2025. CAST: ’Caret’ applications for spatial-temporal models. <a href="https://doi.org/10.32614/CRAN.package.CAST">https://doi.org/10.32614/CRAN.package.CAST</a>
+</div>
+<div id="ref-mounce2017ex" class="csl-entry" role="listitem">
+Mounce, R., P. Smith, and S. Brockington. 2017. Ex situ conservation of plant diversity in the world’s botanic gardens. <em>Nature Plants</em> 3: 795–802.
+</div>
+<div id="ref-naimi2016sdm" class="csl-entry" role="listitem">
+Naimi, B., and M. B. Araujo. 2016. Sdm: A reproducible and extensible r platform for species distribution modelling. <em>Ecography</em> 39: 368–375. <a href="https://doi.org/10.1111/ecog.01881">https://doi.org/10.1111/ecog.01881</a>
+</div>
+<div id="ref-nevill2018ethical" class="csl-entry" role="listitem">
+Nevill, P. G., A. T. Cross, and K. W. Dixon. 2018. Ethical seed sourcing is a key issue in meeting global restoration targets. <em>Current Biology</em> 28: R1378–R1379.
+</div>
+<div id="ref-oksanen2025vegan" class="csl-entry" role="listitem">
+Oksanen, J., G. L. Simpson, F. G. Blanchet, R. Kindt, P. Legendre, P. R. Minchin, R. B. O’Hara, et al. 2025. Vegan: Community ecology package. <a href="https://doi.org/10.32614/CRAN.package.vegan">https://doi.org/10.32614/CRAN.package.vegan</a>
+</div>
+<div id="ref-union2012integrated" class="csl-entry" role="listitem">
+Oldfield, S., and A. C. Newton. 2012. Integrated conservation of tree species by botanic gardens: A reference manual. Botanic Gardens Conservation International.
+</div>
+<div id="ref-silva2025cosst" class="csl-entry" role="listitem">
+Silva, M. C., P. Moonlight, R. S. Oliveira, L. Rowland, and R. T. Pennington. 2025. COSST: A tool to facilitate seed provenancing for climate-smart ecosystem restoration. <em>Journal of Applied Ecology</em> 62: 677–688.
+</div>
+<div id="ref-slatkin1993isolation" class="csl-entry" role="listitem">
+Slatkin, M. 1993. Isolation by distance in equilibrium and non-equilibrium populations. <em>Evolution</em> 47: 264–279.
+</div>
+<div id="ref-st2022seedlot" class="csl-entry" role="listitem">
+St. Clair, J. B., B. A. Richardson, N. Stevenson-Molnar, G. T. Howe, A. D. Bower, V. J. Erickson, B. Ward, et al. 2022. Seedlot selection tool and climate-smart restoration tool: Web-based tools for sourcing seed adapted to future climates. <em>Ecosphere</em> 13: e4089.
+</div>
+<div id="ref-tay2023elasticnet" class="csl-entry" role="listitem">
+Tay, J. K., B. Narasimhan, and T. Hastie. 2023. Elastic net regularization paths for all generalized linear models. <em>Journal of Statistical Software</em> 106: 1–31. <a href="https://doi.org/10.18637/jss.v106.i01">https://doi.org/10.18637/jss.v106.i01</a>
+</div>
+<div id="ref-vander2010question" class="csl-entry" role="listitem">
+Vander Mijnsbrugge, K., A. Bischoff, and B. Smith. 2010. A question of origin: Where and how to collect seed for ecological restoration. <em>Basic and Applied Ecology</em> 11: 300–311.
+</div>
+<div id="ref-venables2002appstats" class="csl-entry" role="listitem">
+Venables, W. N., and B. D. Ripley. 2002. <a href="https://www.stats.ox.ac.uk/pub/MASS4/">Modern applied statistics with s</a>. Fourth. Springer, New York.
+</div>
+<div id="ref-volis2010quasi" class="csl-entry" role="listitem">
+Volis, S., and M. Blecher. 2010. Quasi in situ: A bridge between ex situ and in situ conservation of plants. <em>Biodiversity and conservation</em> 19: 2441–2454.
+</div>
+<div id="ref-walters2021unique" class="csl-entry" role="listitem">
+Walters, C., and V. C. Pence. 2021. The unique role of seed banking and cryobiotechnologies in plant conservation. <em>Plants, People, Planet</em> 3: 83–91.
+</div>
+<div id="ref-wambugu2023role" class="csl-entry" role="listitem">
+Wambugu, P. W., D. O. Nyamongo, and E. C. Kirwa. 2023. Role of seed banks in supporting ecosystem and biodiversity conservation and restoration. <em>Diversity</em> 15: 896.
+</div>
+<div id="ref-wang2014isolation" class="csl-entry" role="listitem">
+Wang, I. J., and G. S. Bradburd. 2014. Isolation by environment. <em>Molecular ecology</em> 23: 5649–5662.
+</div>
+<div id="ref-westwood2021botanic" class="csl-entry" role="listitem">
+Westwood, M., N. Cavender, A. Meyer, and P. Smith. 2021. Botanic garden solutions to the plant extinction crisis. <em>Plants, people, planet</em> 3: 22–32.
+</div>
+<div id="ref-whitlock2016consequences" class="csl-entry" role="listitem">
+Whitlock, R., H. Hipperson, D. B. Thompson, R. K. Butlin, and T. Burke. 2016. Consequences of in-situ strategies for the conservation of plant genetic diversity. <em>Biological Conservation</em> 203: 134–142.
+</div>
+<div id="ref-zeller2012estimating" class="csl-entry" role="listitem">
+Zeller, K. A., K. McGarigal, and A. R. Whiteley. 2012. Estimating landscape resistance to movement: A review. <em>Landscape ecology</em> 27: 777–797.
+</div>
+</div>
+</section>
+<section id="figures" class="level1">
+<h1>FIGURES</h1>
+
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -464,7 +464,7 @@ zones may not align with the goals of restoration collections. The
 second tool, tailored to the Western United States - but globally
 applicable, <code>eSTZwriter</code> (<a href="https://sagesteppe.github.io/eSTZwritR/" class="uri">https://sagesteppe.github.io/eSTZwritR/</a>) assists
 quantitative geneticists in producing standardized spatial data products
-describing areas for targeted seed collection and restoration planing,
+describing areas for targeted seed collection and restoration planning,
 which may be readily used by curators.</p>
 <ol class="example" style="list-style-type: decimal">
 <li></li>
@@ -488,91 +488,115 @@ Woodworth.</div>
 <div id="safehavens" class="section level1">
 <h1>safeHavens</h1>
 <p>While accessioning and maintaining germplasm collections <em>ex
-situ</em> to develop propagules are cost efficient restoration
-conservation activities, the field work required to acquire even a
-minimal number of populations, and individuals from them, across a
-species range remains costly. Notable costs include the wages for field
-staff to perform the germplasm collection, and fuel to visit sites -
-generally repeatedly - to assess the size of the population, and conduct
-sampling at phenologically appropriate times.</p>
-<p>Endeavors to maximize the representation of adaptive potential and
-neutral genetic diversity requires minimizing the cost of variable field
-expenditures to distribute project funds across as broad a range of
-species as can be afforded. To this end we have developed a variety of
-tools which are useful for partitioning the geographic, and
-environmental, space which species occupy to develop priority zones and
-spatial products which can be used to prioritize and communicate areas
-of interest to field crews.</p>
-<p>The R package <code>safeHavens</code> provides functionality to
-partition species ranges into geographically constrained clusters by
-utilizing three types of distances: geographic, environmental, or
-resistance to movement, that have been empirically shown to restrict
-genetic connectivity in plants. These groups form identifiable units
-that can be used for designing germplasm collection endeavors, assigning
-a desired number of target samples to each cluster, and optionally
-return spatial data for sending to field crews to guide collections.</p>
+situ</em> to develop propagules for restoration and conservation
+activities is cost-effective, the acquisition of collections from the
+wild across a species range, especially from many populations and
+individuals within them, remains expensive due to costs associated with
+field work and staffing [<span class="citation">Li and Pritchard (<a href="#ref-li2009science">2009</a>)</span>; CITE: field work is
+expensive- can we expert pers. comm Andrea or Kay on this?). Hence, the
+sampling of germplasm from a species aims to maximize the total genetic
+diversity across its range, or the suitability of populations for use in
+restorations, while minimizing the number of populations sampled.
+However, systems for guiding and measuring progress relative to this
+principle are absent for rare taxa, and for common taxa rely on data
+sets that may not relate to an individual species biology or ecology
+(e.g., the use of provisional STZs or ecoregions), or require
+considerable research to develop (eSTZs).</p>
+<p>Critiques of provisional seed transfer zones, the most used method in
+the USA include <span class="citation">(<a href="#ref-durka2025assessment">Durka et al., 2025</a>,)</span>…
+Limitations of alternatively proposed systems, such as sampling along
+ecoregions include (ask Chris and Dave, but also granularity)….
+Empirical Seed Transfer Zones, face limitations in their development as
+they require considerable empirical data, itself facing multiple
+challenges towards its collection, and given their cost are unlikely to
+be developed for the full range of species desired by restoration
+ecologists (cool guy from NV I like). Indeed, recent systems for
+selecting seed sources for specific restoration site have moved to
+developing computational methods for selecting material using existing
+data <span class="citation">(<a href="#ref-st2022seedlot">St. Clair et
+al., 2022</a>; <a href="#ref-silva2025cosst">Silva et al.,
+2025</a>)</span>.<br />
+However, these systems require that the restoration site be identified
+<em>before</em> treatments need to be applied, knowledge that exists for
+planned restoration projects or the development of material for a
+particular conservation unit, but that would require a lag of several
+years of germplasm material development for restorations after natural
+disturbances - especially across large geographic domains or reserves
+(Shriver et al. 2026).</p>
+<p>Accordingly, we present <code>safeHavens</code> a landscape genetics
+inspired (?) package for R that helps curators develop taxon specific
+sampling schemes to maximize either the neutral genetic diversity of
+taxa using null models or have suitable candidate material for a
+restoration site available.<br />
+safeHavens partitions species ranges into geographically constrained
+groups by utilizing clustering of three types of distances: geographic,
+or resistance to gene flow, or environmental, each of which has been
+empirically shown to influence species genetic structures <span class="citation">(<a href="#ref-slatkin1993isolation">Slatkin, 1993</a>;
+<a href="#ref-mcrae2006isolation">McRae, 2006</a>; <a href="#ref-wang2014isolation">Wang and Bradburd, 2014</a>)</span>. These
+clusters, represented by spatial data, can be used to design germplasm
+collection endeavors, assigning a desired number of target samples to
+each cluster. The spatial data generated by this process can then be
+sent to field crews to guide both the planning and implementation of
+collections.</p>
 <div id="usage" class="section level2">
 <h2>Usage</h2>
-<p>All functions require species occurrence data, such as from GBIF, and
-readily available and easy to integrate into usage with
-<code>safeHavens</code> through the <code>rgbif</code> package, although
-taxa requiring enhanced cleaning may require the use of gatoRs <span class="citation">(<a href="#ref-chamberlain2017rgbif">Chamberlain and
-Boettiger, 2017</a>; <a href="#ref-patten2024gators">Patten et al.,
-2024</a>)</span>. Given the relatively coarse nature of these analyses
-GBIF data should be sufficient for all taxa less rare species, which are
-likely to require data maintained by administrative bodies responsible
-for the management of rare species (e.g. NatureServe members, or in the
-United States various state and federal agencies). A mid-grade personal
-laptop is sufficient to carry out spatial analyses, and the the compute
-time to treat a thousand species should only be on the order of a day
-for the most complex approaches (REED, ACTUALLY SIMULATE THIS WITH ~100
-TAXA), no paid data sources or software are required, and minimal
-knowledge of R should be sufficient.</p>
-<p>Functions that utilize purely geographic distance include:
+<p>Functions that utilize geographic distance include:
 <code>PointBasedSample</code>, <code>EqualAreaSample</code> and
-<code>IBDBasedSample</code>, as well as a
-<code>OpportunisticSample</code> which uses geography but existing
-collections and designs future collections around them. GENERAL OVERVIEW
-- 2 SENTENCES. A general vignette on the package, which covers these
-functions is available at <a href="https://sagesteppe.github.io/safeHavens/articles/GettingStarted.html">Getting
+<code>IBDBasedSample</code>, and <code>OpportunisticSample</code> which
+is derived from the <code>PointBasedSample</code> approach but designs
+additional sampling around existing collections. Rather than optimizing
+designs specifically for maximizing distances directly, they partition
+geographic space into relatively equally sized increments that
+collections should be made from within. These functions are all highly
+adaptable to support <code>n</code> collection areas, and a single
+collection per geographic unit. A general vignette on the package, which
+covers these functions is available at <a href="https://sagesteppe.github.io/safeHavens/articles/GettingStarted.html">Getting
 Started</a>.</p>
-<p>Environmental distance, relevant to the biology of individual
-species, is accomodated by <code>EnvironmentalBasedSample</code>, and
-its data preparation helpers: <code>elasticSDM</code>,
-<code>PostProcessSDM</code>, <code>RescaleRasters</code>,
-<code>writeSDMResults</code>. GENERAL OVERVIEW - 2 SENTENCES. a vignette
-is available <a href="https://sagesteppe.github.io/safeHavens/articles/SpeciesDistributionModels.html">Species
-Distribution Models</a></p>
-<p>Resistance to geneflow is addressed by the function
+<p>Landscape resistance to geneflow is modelled using the function
 <code>IBRSurface</code> and its data preparation helpers:
 <code>buildResistanceSurface</code>, <code>populationResistance</code>,
-and requires the final sample draw to be generated using
-<code>PolygonBasedSample</code>. The isolation by resistance workflow
-creates a <em>theoretical</em> surface, populated with user specified
-values, that represents the cost to movement of genetic material
-(e.g. fruits and seeds, and pollen) between populations. A single
-surface can be used for a landscape, or surfaces can be parameterized
-for individual species. However, given a lack of detailed knowledge on
-the dispersal ecology of many species, and in the absence of genetics
-data, we expect generalized surfaces for landscapes, rather than species
-interactions with landscape, to be the most often used. A vignette
-covering the preparation of surfaces is available at <a href="https://sagesteppe.github.io/safeHavens/articles/IsolationByResistance.html">Isolation
+and optionally the final sample draw to be generated using
+<code>PolygonBasedSample</code>. A single surface can be used for a
+landscape, or surfaces can be parameterized for individual species. The
+isolation by resistance workflow creates a <em>theoretical</em> surface,
+populated with user specified values, that represents the cost to
+movement of genetic material (e.g. fruits and seeds, and pollen) between
+populations, see <span class="citation">Zeller et al. (<a href="#ref-zeller2012estimating">2012</a>)</span> for caveats. A
+vignette covering the preparation of surfaces is available at <a href="https://sagesteppe.github.io/safeHavens/articles/IsolationByResistance.html">Isolation
 by Resistance</a>.</p>
-<p>The function <code>PolygonBasedSample</code> works on either
-provisional or empirical seed transfer zones, ecoregion level data, and
-is required to finish a sample design under isolation by resistance
-based sampling. <code>PolygonBasedSample</code> is able to incorporate
-multiple user specified decisions to maximize sample numbers in various
-strata based on their size, number of disconnected areas, or - when the
-data are available, temperature. Accordingly, it can loosely accomodate
-the variables that went into the generation of seed transfer zones or
-ecoregions.</p>
+<p>Environmental distance, akin to the concept of isolation by
+environment, tailoredto the biology of individual species, is
+accommodated by <code>EnvironmentalBasedSample</code>, and its data
+preparation helpers: <code>elasticSDM</code>,
+<code>PostProcessSDM</code>, <code>RescaleRasters</code>,
+<code>writeSDMResults</code>. This workflow seeks to identify user
+supplied variables associated with species occurrences, and cluster the
+species range into <em>n</em> specific regions using these variables and
+hierarchical clustering approaches, optionally the surfaces can be
+resampled using <code>PolygonBasedSample</code>. A vignette is available
+for this workstream at <a href="https://sagesteppe.github.io/safeHavens/articles/SpeciesDistributionModels.html">Species
+Distribution Models</a>.</p>
+<p><code>PolygonBasedSample</code> works on any type of polygon data,
+but is focused on supporting either provisional or empirical seed
+transfer zones, or ecoregion level data. <code>PolygonBasedSample</code>
+is able to incorporate multiple user specified decisions to maximize
+sample numbers in various strata based on their size, number of
+disconnected areas, or - when the data are available, temperature.
+Accordingly, it can loosely accommodate the variables that went into the
+generation of seed transfer zones or ecoregions. A visual guide to these
+function is available at <a href="ADD%20ME%20WITH%20UPDATED%20NAME/PAGE">Polygon Based
+Sample</a></p>
 <p>Additionally, a function for sampling rare species based on
 occurrence data <code>KMedoidsBasedSample</code> is included, which can
-run on either geographic or environmental data, and allows for boostrap
-permutations around taxonomic, coordinate, and whether a population is
-still extent, uncertainty. GENERAL OVERVIEW - 2 SENTENCES. A vignette is
-available <a href="https://sagesteppe.github.io/safeHavens/articles/RareSpecies.html">Rare
+run on geographic, resistance, or environmental distances. When using
+geographic distances as input, and if coordinate uncertainty data
+available, this function will jitter site coordinates within the
+measures of uncertainty so simulate actual population positions, it will
+also ‘drop’ populations that may be extinct, incorrectly identified, or
+of another taxon to give results that are resilient to these types of
+data imperection. The function uses co-location network strength to
+identify a set of populations that minimizes the sum of distances in ‘n’
+user specified groups. A vignette is available <a href="https://sagesteppe.github.io/safeHavens/articles/RareSpecies.html">Rare
 Species</a></p>
 <p>A final function, that exists for creating cartographic boundaries to
 for use with mobile GIS software is <code>PrioritizeSample</code>, which
@@ -584,96 +608,80 @@ Example</a>.</p>
 </div>
 <div id="detailed-functionality" class="section level2">
 <h2>Detailed Functionality</h2>
-<p>Three sampling approaches offered by <code>safeHavens</code> are
-relatively complex and their general workflows are described below.</p>
-<hr />
-<p><code>KMedoidsBasedSample</code> the sole function intended for use
-with rare species simulates both geographic and taxonomic uncertainty of
-cleaned population occurrences to identify a core number of populations
-that best minimize the sum of square distances between medoid cluster
-membership.</p>
-<p>To conduct <code>KMedoidsBasedSample</code> the function does
-this…</p>
-<ol style="list-style-type: decimal">
-<li>Identify sites that will be permuted via coordinate jittering, or
-population dropout.</li>
-<li>For n simulations jitter sites X times, updating distance matrices
-only where relevant</li>
-<li>Perform k-medoids sampling across the existing network Calculate
-cost of each solution, by minimizing sum of squares differences between
-cluster medoid and sites Repeat k-medoids sampling X times to see if it
-can be improved, return least cost solution.</li>
-<li>From all bootstrap solutions, identify the site pair group that’s
-are returned most often (co-occurrence strength), and rank a relative
-order of site visitations.</li>
-</ol>
-<hr />
-<p>The isolation by resistance workflow separates the creation of the
-resistance surface (<code>buildResistanceSurface</code>), assignment of
-areas of species occurrence <code>populationResistance</code>, and
-actual sampling (using <code>PolygonBasedSample</code>), into distinct
-phases allowing the user to interact with intermediate outputs.</p>
-<ol style="list-style-type: decimal">
-<li>Parameterize a cost surface (raster) using environmental variables
-that restrict species gene flow, using
-<code>buildResistanceSurface</code>, or the user can build and supply
-there own surface. 1.5) Calculate least distance costs between randomly
-sampled cells in areas buffered around existing collections
-<code>populationResistance</code> that will be used for the distance
-matrix.</li>
-</ol>
-<p><code>IBRSurface</code> will perform the following steps before
-returning a product that the user can submit to sampling with
-<code>PolygonBasedSample</code>.</p>
-<ol start="2" style="list-style-type: decimal">
-<li>Identify <em>n</em> clusters of areas with less resistance to
-dispersal within them, using the IBR distance matrix, and NbClust with
-complete linkage for a full matrix, or by ordinating a delaunay graph
-(sparse) distance matrix into two-dimensional space before applying
-NbClust.</li>
-<li>Identify the shortest geographic distance between any two sampled
-points in different clusters, and use 45% of the minimum distance as a
-buffer to assign all pixels surrounding points to the points cluster
-group.</li>
-<li>Expand cluster margins outward in iterative geographic fronts until
-reaching maximum cell count or encountering cells adjacent to multiple
-clusters</li>
-<li>Cells on the boundaries of multiple clusters, are split relatively
-evenly in linear features towards adjacent clusters; any remaining
-points are randomly assigned to a bordering cluster.</li>
-<li>The resulting <code>sf</code> object can then be passed to
-<code>PolygonBasedSample</code> and relevant methods dispatched.</li>
-</ol>
-<hr />
-<p>to conduct <code>EnvironmentalBasedSample</code> the function does
-this…</p>
-<ol start="0" style="list-style-type: decimal">
-<li>Generate psuedo-absences to fit a presence absence model, and thin
-occurrence records to reduce spatial auto-correlation in areas with
-higher sampling activity <span class="citation">(<a href="#ref-aiello-lammens2015spthin">Aiello-Lammens et al., 2015</a>; <a href="#ref-naimi2016sdm">Naimi and Araujo, 2016</a>)</span>. 0.5) Create
-spatially explicity cross-validation folds, and use recursive feature
-elimination to identify environmental variables with an association with
-species occurrence records (CARET-KUHN), generate PCNM eigenvectors and
-use forward feature selection on a subset of them (e.g. the first 10 or
-20) to identify predictors associated with occurrences <span class="citation">(<a href="#ref-meyer2025cast">Meyer et al.,
-2025</a>)</span>.</li>
-<li>Fit a final elastic net SDM with environmental predictors and
-spatial PCNM eigenvectors to model species distribution <span class="citation">(<a href="#ref-tay2023elasticnet">Tay et al., 2023</a>;
-<a href="#ref-oksanen2025vegan">Oksanen et al., 2025</a>)</span>.</li>
-<li>Extract and standardize beta coefficients, then rescale raster
-layers and weigh by absolute coefficient values. 2.5) Predict the
-probability of the taxons occurrence using this model onto a probability
-surface, and threshold to likely areas [<span class="citation">Hijmans
-(<a href="#ref-hijman2026terra">2026</a>)</span>; DISMO].</li>
-<li>create a matrix of relevant environmental weights from the
-environmental matrix, and geographic distances, and use hierarchical
-clustering to identify environmentally similar and geographically
-constrained groups of populations.</li>
-<li>To create a surface of environmental group classification, train a
-KNN classifier, if classes are unbalanced retrain a final classifier and
-predict environmental cluster asignments across the weighted raster
-surface.</li>
-</ol>
+<p>The isolation by resistance workflow is separated into three main
+phases to allow users to review, modify, and tailor intermediate
+objects. Resistance surface rasters are created by
+<code>buildResistanceSurface</code>, followed by the sampling of these
+surfaces to create distance matrices using
+<code>populationResistance</code>, and finally, the classification of
+the species range into clusters with less resistance to movement within
+than between them by <code>IBRSurface</code>, the polygons from
+<code>IBRSurface</code> are then submitted to the general sampling
+function <code>PolygonBasedSample</code>. A cost surface raster that
+represents resistance to gene flow for the species across the landscape,
+used for calculating least-cost distances between sites, is
+parameterized in <code>buildResistanceSurface</code> it natively
+supports layers for oceans, lakes, rivers, topographic ruggedness, and a
+species distribution model’s probability surface, but also allows users
+to incorporate additional features and weights as desired.*** Pairwise
+distances across the cost surface and between randomly sampled sites
+across the buffered species range are used to create a distance matrix
+for clustering in <code>populationResistance</code>. Sites are
+hierarchically clustered into <em>n</em> groups, and pixels of their
+buffered species range are iteratively assigned to each cluster using
+<code>IBRSurface</code>, using NbClust with a silhouette method
+[NCLUST]. <code>IBRSurface</code> will return a polygon sf object of all
+clusters that work with <code>PolygonBasedSample</code> to assign a
+number of desired collections to each identified cluster.</p>
+<p>The data preparation for the <code>EnvironmentalBasedSample</code> is
+also compartmentalized into several functions, allowing users to review,
+modify, and save intermediate outputs. A species distribution model,
+using user-specific independent variables (raster format) supplemented
+with internally derived low-order PCNM surfaces, with internal
+occurrence data thinning and pseudo-absence generation, spatial
+cross-validation folds, and automatic variable selection using elastic
+net regression and recursive feature elimination, is prepared using
+<code>elasticSDM</code> <span class="citation">(<a href="#ref-kuhn2008caret">Kuhn and Max, 2008</a>; <a href="#ref-aiello-lammens2015spthin">Aiello-Lammens et al., 2015</a>; <a href="#ref-naimi2016sdm">Naimi and Araujo, 2016</a>; <a href="#ref-tay2023elasticnet">Tay et al., 2023</a>; <a href="#ref-meyer2025cast">Meyer et al., 2025</a>; <a href="#ref-oksanen2025vegan">Oksanen et al., 2025</a>)</span>. The
+predictions of habitat suitability are converted from probabilities into
+a binary surface of presence/absence using a user-specified threshold
+metric, and areas of known occupancy are optionally ‘burned’ back onto
+this raster surface, the result being a surface that tries to maximize
+coverage of the species’ occupied habitat, using
+<code>PostProcessSDM</code> <span class="citation">(<a href="#ref-hijman2024dismo">Hijmans et al., 2024</a>; <a href="#ref-hijman2026terra">Hijmans, 2026</a>)</span>. The rasters, used
+as independent variables, and with terms included in the final sdm
+model, are then rescaled, based on their contributions
+(beta-coefficients) to the model, for use in identifying clusters of the
+species range that experience more similar relevant habitat
+characteristics than other portions, using <code>RescaleRasters</code>.
+Results from these processes may then be saved using
+<code>writeSDMresults</code>. The germplasm collection sample is
+implemented by <code>EnvironmentalBasedSample</code>, which samples and
+clusters n locations across the raster stack, a k-nearest neighbor
+classifier is then trained on a relatively class-balanced resampling off
+these clusters, and spatial clusters are identified using predictions
+from it <span class="citation">(<a href="#ref-venables2002appstats">Venables and Ripley, 2002</a>)</span>.
+If a user desires more than one germplasm collection per cluster, they
+may use <code>PolygonBasedSample</code> with the output from
+<code>EnvironmentalBasedSample</code>.</p>
+<p><code>KMedoidsBasedSample</code> is intended for use with rare
+species and maximizes the geographic coverage (by minimizing the sum of
+dissimilarities) of <em>n</em> collections by identifying individual
+populations to sample, in consideration of common data quality issues in
+occurrence data. <code>KMedoidsBasedSample</code> is the only function
+in <code>safeHavens</code> that directly models raw population data
+rather than generalized polygonal geometries around them. From
+user-specified data, occurrence records that are to undergo coordinate
+jittering, and any that may undergo population dropout (due to either
+misidentifications, conflicting taxonomy, or local extinction), are
+identified. A user-specified number of bootstrap simulations permute
+eligible sites, and updated distance matrices are fed into K-medoids
+repeatedly, within each run multiple restarts are allowed, to minimize
+the cost of the solution for each iteration <span class="citation">(<a href="#ref-maechler2025cluster">Maechler et al., 2025</a>)</span>.
+Across all bootstrap iterations, each unique combination of candidate
+sites (set) is counted to identify the network of sites with the lowest
+cost (highest co-location strength), and the individual sites within
+this network are ordered by the number of times they were returned
+across all bootstrap simulations.</p>
 </div>
 </div>
 <div id="estzwritr" class="section level1">
@@ -926,7 +934,7 @@ Sophie Taddeo <a href="https://orcid.org/0000-0002-7789-1417" class="uri">https:
 <h1>Acknowledgements</h1>
 <p>The Bureau of Land Management for partially funding the developement
 of these tools through work contracted to the Chicago Botanic Garden.
-Emily Woodoworth for creating the ‘Dissemination’ figure.</p>
+Emily Woodworth for creating the ‘Dissemination’ figure.</p>
 </div>
 <div id="literature-cited" class="section level1">
 <h1>LITERATURE CITED</h1>
@@ -953,9 +961,11 @@ Bucharova, A., O. Bossdorf, J. Scheepens, and R. Salguero-Gómez. 2025.
 Assessing limits of sustainable seed harvest in wild plant populations.
 <em>Conservation Biology</em>: e70075.
 </div>
-<div id="ref-chamberlain2017rgbif" class="csl-entry">
-Chamberlain, S., and C. Boettiger. 2017. <a href="https://doi.org/10.7287/peerj.preprints.3304v1">R python, and ruby
-clients for GBIF species occurrence data</a>. <em>PeerJ PrePrints</em>.
+<div id="ref-durka2025assessment" class="csl-entry">
+Durka, W., S. G. Michalski, J. Höfner, A. Bucharova, F. Kolář, C. M.
+Müller, C. Oberprieler, et al. 2025. Assessment of genetic diversity
+among seed transfer zones for multiple grassland plant species across
+germany. <em>Basic and Applied Ecology</em> 84: 50–60.
 </div>
 <div id="ref-gann2019international" class="csl-entry">
 Gann, G. D., T. McDonald, B. Walder, J. Aronson, C. R. Nelson, J.
@@ -979,6 +989,10 @@ and future prospects. <em>Plant diversity</em> 39: 314–330.
 </div>
 <div id="ref-hijman2026terra" class="csl-entry">
 Hijmans, R. J. 2026. Terra: Spatial data analysis. <a href="https://doi.org/10.32614/CRAN.package.terra">https://doi.org/10.32614/CRAN.package.terra</a>
+</div>
+<div id="ref-hijman2024dismo" class="csl-entry">
+Hijmans, R. J., S. Phillips, J. Leathwick, and J. Elith. 2024. Dismo:
+Species distribution modeling. <a href="https://doi.org/10.32614/CRAN.package.dismo">https://doi.org/10.32614/CRAN.package.dismo</a>
 </div>
 <div id="ref-hoban2020taxonomic" class="csl-entry">
 Hoban, S., T. Callicrate, J. Clark, S. Deans, M. Dosmann, J. Fant, O.
@@ -1009,11 +1023,28 @@ seed transfer zones for five forb species from the <span>G</span>reat
 <span>B</span>asin <span>F</span>loristic <span>R</span>egion,
 <span>USA</span>. <em>Natural Areas Journal</em> 35: 174–188.
 </div>
+<div id="ref-kuhn2008caret" class="csl-entry">
+Kuhn, and Max. 2008. Building predictive models in r using the caret
+package. <em>Journal of Statistical Software</em> 28: 1–26. <a href="https://doi.org/10.18637/jss.v028.i05">https://doi.org/10.18637/jss.v028.i05</a>
+</div>
+<div id="ref-li2009science" class="csl-entry">
+Li, D.-Z., and H. W. Pritchard. 2009. The science and economics of ex
+situ plant conservation. <em>Trends in plant science</em> 14: 614–621.
+</div>
+<div id="ref-maechler2025cluster" class="csl-entry">
+Maechler, M., P. Rousseeuw, A. Struyf, M. Hubert, and K. Hornik. 2025.
+<a href="https://CRAN.R-project.org/package=cluster">Cluster: Cluster
+analysis basics and extensions</a>.
+</div>
 <div id="ref-mckay2005local" class="csl-entry">
 McKay, J. K., C. E. Christian, S. Harrison, and K. J. Rice. 2005.
 <span>‘How local is local?’</span>—a review of practical and conceptual
 issues in the genetics of restoration. <em>Restoration Ecology</em> 13:
 432–440.
+</div>
+<div id="ref-mcrae2006isolation" class="csl-entry">
+McRae, B. H. 2006. Isolation by resistance. <em>Evolution</em> 60:
+1551–1561.
 </div>
 <div id="ref-meyer2025cast" class="csl-entry">
 Meyer, H., C. Milà, M. Ludwig, J. Linnenbrink, and F. Schumacher. 2025.
@@ -1043,11 +1074,21 @@ Oldfield, S., and A. C. Newton. 2012. Integrated conservation of tree
 species by botanic gardens: A reference manual. Botanic Gardens
 Conservation International.
 </div>
-<div id="ref-patten2024gators" class="csl-entry">
-Patten, N. N., M. L. Gaynor, D. E. Soltis, and P. S. Soltis. 2024.
-Geographic and taxonomic occurrence r-based scrubbing (gatoRs): An r
-package and workflow for processing biodiversity data. <em>Applications
-in Plant Sciences</em> 12: e11575. <a href="https://doi.org/10.1002/aps3.11575">https://doi.org/10.1002/aps3.11575</a>
+<div id="ref-silva2025cosst" class="csl-entry">
+Silva, M. C., P. Moonlight, R. S. Oliveira, L. Rowland, and R. T.
+Pennington. 2025. COSST: A tool to facilitate seed provenancing for
+climate-smart ecosystem restoration. <em>Journal of Applied Ecology</em>
+62: 677–688.
+</div>
+<div id="ref-slatkin1993isolation" class="csl-entry">
+Slatkin, M. 1993. Isolation by distance in equilibrium and
+non-equilibrium populations. <em>Evolution</em> 47: 264–279.
+</div>
+<div id="ref-st2022seedlot" class="csl-entry">
+St. Clair, J. B., B. A. Richardson, N. Stevenson-Molnar, G. T. Howe, A.
+D. Bower, V. J. Erickson, B. Ward, et al. 2022. Seedlot selection tool
+and climate-smart restoration tool: Web-based tools for sourcing seed
+adapted to future climates. <em>Ecosphere</em> 13: e4089.
 </div>
 <div id="ref-tay2023elasticnet" class="csl-entry">
 Tay, J. K., B. Narasimhan, and T. Hastie. 2023. Elastic net
@@ -1058,6 +1099,10 @@ Statistical Software</em> 106: 1–31. <a href="https://doi.org/10.18637/jss.v10
 Vander Mijnsbrugge, K., A. Bischoff, and B. Smith. 2010. A question of
 origin: Where and how to collect seed for ecological restoration.
 <em>Basic and Applied Ecology</em> 11: 300–311.
+</div>
+<div id="ref-venables2002appstats" class="csl-entry">
+Venables, W. N., and B. D. Ripley. 2002. <a href="https://www.stats.ox.ac.uk/pub/MASS4/">Modern applied statistics
+with s</a>. Fourth. Springer, New York.
 </div>
 <div id="ref-volis2010quasi" class="csl-entry">
 Volis, S., and M. Blecher. 2010. Quasi in situ: A bridge between ex situ
@@ -1074,6 +1119,10 @@ Wambugu, P. W., D. O. Nyamongo, and E. C. Kirwa. 2023. Role of seed
 banks in supporting ecosystem and biodiversity conservation and
 restoration. <em>Diversity</em> 15: 896.
 </div>
+<div id="ref-wang2014isolation" class="csl-entry">
+Wang, I. J., and G. S. Bradburd. 2014. Isolation by environment.
+<em>Molecular ecology</em> 23: 5649–5662.
+</div>
 <div id="ref-westwood2021botanic" class="csl-entry">
 Westwood, M., N. Cavender, A. Meyer, and P. Smith. 2021. Botanic garden
 solutions to the plant extinction crisis. <em>Plants, people,
@@ -1083,6 +1132,11 @@ planet</em> 3: 22–32.
 Whitlock, R., H. Hipperson, D. B. Thompson, R. K. Butlin, and T. Burke.
 2016. Consequences of in-situ strategies for the conservation of plant
 genetic diversity. <em>Biological Conservation</em> 203: 134–142.
+</div>
+<div id="ref-zeller2012estimating" class="csl-entry">
+Zeller, K. A., K. McGarigal, and A. R. Whiteley. 2012. Estimating
+landscape resistance to movement: A review. <em>Landscape ecology</em>
+27: 777–797.
 </div>
 </div>
 </div>
