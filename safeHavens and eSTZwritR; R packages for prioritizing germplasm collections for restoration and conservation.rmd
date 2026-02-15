@@ -1,13 +1,13 @@
 ---
 title: safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation 
-author: "| Reed Clark Benkendorf$^1{1,2}$, Jeremie B. Fant$$^1{1,2}$, Sophie Taddeo$^3$, Brianna Wieferich$^2$, Chris Woolridge$^2$ \n|
+author: "| Reed Clark Benkendorf$^1{1,2}$, Jeremie B. Fant$^{1,2}$, Sophie Taddeo$^3$, Brianna Wieferich$^2$, Chris Woolridge$^2$ \n|
   $^1$ Northwestern University, Evanston, Illinois 60208 USA  \n| 
   $^2$ Chicago Botanic Garden, 1000 Lake Cook Road, Glencoe Illinois 60022 USA  \n
   $^3$ Department of Environmental and Ocean Sciences, University of San Diego, San Diego, California 92110, USA"
 output:
- # pdf_document: default
-  word_document: default
- # html_document: default
+  pdf_document: default
+  #word_document: default
+  html_document: default
   toc: false
   figsintext: false
 orcid: "Reed Benkendorf https://orcid.org/0000-0003-3110-6687"
@@ -48,43 +48,31 @@ Here, we present two geospatial software packages to help curators refine and im
 The first tool, `safeHavens` (https://sagesteppe.github.io/safeHavens/), which is global in coverage, aims to maximize the putative coverage of neutral genetic variation across the entirety, or subsets of, a species range using proxies: 1) geographic, 2) ecoregional, and 3) environmental coverage of *ex situ* and restoration collections in areas lacking defined seed transfer zones, or in scenarios where seed transfer zones may not align with the goals of restoration collections. 
 The second tool, tailored to the Western United States - but globally applicable, `eSTZwriter` (https://sagesteppe.github.io/eSTZwritR/) assists quantitative geneticists in producing standardized spatial data products describing areas for targeted seed collection and restoration planning, which may be readily used by curators.  
 
- (@havens2015seed)
-
 ![Dissemination, proceeding clockwise from 'Collections'. The first phase of collections includes the initial collection of germplasm from the wild, the most common starting point for both restoration and *ex situ* conservation.  The next two panels *largely* refer to quantitative genetics approaches for the development of empirical seed transfer zones, while 'Dissemination` depicts the essential component for developing a curated collection of being able to convey priority areas to collector crews for a more targeted collection. These activities lead to the potential for agricultural or propagation increase of collected germplasm and the selection of materials for restoration plantings. By Emily Woodworth.](./figures/Wu-naut.jpg){width=75%}  
 
 # safeHavens
-While accessioning and maintaining germplasm collections *ex situ* to develop propagules for restoration and conservation activities is cost-effective, the collection material across a species range, remains expensive due to costs associated with field work [@li2009science; CITE: expert comms?).
-Hence, the sampling of germplasm from a species aims to maximize the total genetic diversity across its range, or the suitability of populations for use in restorations, while minimizing the cost of field work. 
-However, systems for guiding and measuring progress relative to this principle are absent for rare taxa, and for common taxa rely on data sets that may not relate to an individual species biology or ecology (e.g., the use of provisional STZs or ecoregions), or require considerable research to develop. 
+While accessioning and maintaining germplasm collections *ex situ* to develop propagules for restoration and conservation activities is cost-effective, the collection of material across a species range, remains difficult due to costs associated with field work and effects of weather [@li2009science; @erickson2020seed).
+Hence, the sampling of germplasm from a species aims to maximize the total target genetic diversity, or the suitability of populations for use in restorations, while minimizing the cost of field work. 
+However, systems for guiding and measuring progress relative to this principle are absent for rare taxa, and for common taxa rely on data sets that are unlikely to relate to an individual species biology (e.g., provisional STZs or ecoregions), or require considerable research to develop. 
 
-CHANGE
-  - pSTZs fundamental mismatch in spatial domain
-    - e.g. they often treat administrative areas NOT species ranges; so can not offer coverage. OR do not exist for all regions
-  - pSTZs and Bailey's Ecoregions can have a fundamental mismatch in spatial grain
-    - classified areas can be too coarse for smaller geographic ranged species
-  - pSTZs fundamental mismatch in thematic grain 
-    - fewer variables, do not map between different climate regions (e.g. tropics, through subtropics, to temperate) at possible species boundaries. 
-  - Ecoregions have a mismatch in temporal grain 
+Provisional Seed Transfer Zones are generally created for administrative regions (e.g, the USA), domains that can limits their coverage to only portions of a species range [@bower2014generalized; ].
+Conversely, Both STZs and Ecoregions (e.g. Baileys), have a mismatch between their spatial grain, where species with small geographic ranges may fall entirely within only a few zones, offering limited guidance for making multiple collections [].  
+pSTZs are generally structured from only a couple variables, which may not be correlated with those governing an individual species niche; while ecoregions capture the response of large swathes of vegetation rather than individual species. 
 
-ALTERNATIVES INCLUDE
-  - Empirical Seed Transfer zones 
-    - Genetics 
-    - Common Garden 
-    - Combined with environmental variables to detect putatively adaptive alleles, or phenotypes
-  - Best, but expensive. (guy from NV)
-  - SDM based approaches, cheap fast, can be used to guide collections. 
-    - "The compass simply represents the ideal, and sight steering a compromise which allows your boat to exist at all"
+Accordingly, we present `safeHavens` a landscape genetics inspired package for R that helps curators develop taxon specific sampling schemes to guide attempts to maximize either the neutral genetic diversity of taxa using a variety of simple approaches. 
+safeHavens partitions species ranges into geographically constrained groups by utilizing clustering of three types of distances: realized geographic, and theoretical resistance to gene flow, or environmental, each of which has been empirically shown to influence species genetic structures, although the effects are not present across all species [@mcrae2006isolation; @slatkin1993isolation; @wang2014isolation; @durka2025assessment].
+These clusters, represented by spatial data, can be used to design germplasm collection endeavors, assigning a desired number of target samples to each cluster, akin to existing SDM based approaches.
+The spatial data generated by this process can then be sent to field crews to guide both the planning and implementation of collections.
 
----- **this gets worked into introduction for safeHavens and needs to be made more concise** ----
+Approaches to better reflect the ecology of individual species have been the use of eSTZs and SDMs [].
+While eSTZs, developed from molecular and/or common garden data, and modeled in the context of environmental variables, are the gold standard there development is resource intensive and unobtainable for the wide range of species desired for restoration and conservation. 
+While SDMs rarely have a causal or functional relationship data available, they at least use correlations between the distribution of a species and environmental variables, and are readily produced *in silico* using pre-existing occurrence records. 
+A second stage, using the species predicted suitable habitat surfaces, and the statistical model itself, is the ability to identify regions of the species range with more similarity between themselves than across them  [@crow2018provisional; @doherty2017matching; @marinoni2021spatiotemporal; @shryock2017landscape].
+
 Species Distribution Models have repeatedly been used to identify taxon specific seed transfer zones through a two stage model fitting and clustering process [@vitt2022seed]. 
 Clustering has used NMDS surfaces of environmental variables, or distances where each selected variables has the same weight, and ranges from use of k-means and hierarchical cluster [@crow2018provisional; @doherty2017matching; @marinoni2021spatiotemporal; @shryock2017landscape; @silva2025cosst].
 Further variable weighing from SDM outputs are supported in the Seed Lot Selection Tool, which allows calculations of climate similarity, to identify collection gaps using the Seedlot Selection Tool, or select seed sources [@winkler2024matching; @st2022seedlot].
 Indeed, many of the aforementioned works include supplemental materials outline their approaches for use, leading credence to the value of a package offering this support. 
-
-Accordingly, we present `safeHavens` a landscape genetics inspired package for R that helps curators develop taxon specific sampling schemes to guide attempts to maximize either the neutral genetic diversity of taxa using null models or have suitable candidate material for a restoration site available.  
-safeHavens partitions species ranges into geographically constrained groups by utilizing clustering of three types of distances: geographic, resistance to gene flow, or environmental, each of which has been empirically shown to influence species genetic structures, although is not always present [@mcrae2006isolation; @slatkin1993isolation; @wang2014isolation; @durka2025assessment].
-These clusters, represented by spatial data, can be used to design germplasm collection endeavors, assigning a desired number of target samples to each cluster.
-The spatial data generated by this process can then be sent to field crews to guide both the planning and implementation of collections.
 
 ## Usage
 Functions that utilize geographic distance include: `PointBasedSample`, `EqualAreaSample` and `IBDBasedSample`, and `OpportunisticSample` which is derived from the `PointBasedSample` approach but designs additional sampling around existing collections.
@@ -99,12 +87,12 @@ A vignette covering the preparation of surfaces is available at [Isolation by Re
 
 Environmental distance, akin to the concept of isolation by environment, tailored to the biology of individual species, is accommodated by `EnvironmentalBasedSample`, and its data preparation helpers: `elasticSDM`, `PostProcessSDM`, `RescaleRasters`, `writeSDMResults`. 
 This workflow seeks to identify user supplied variables associated with species occurrences, and cluster the species range into *n* specific regions using these variables and hierarchical clustering approaches, optionally the surfaces can be resampled using `PolygonBasedSample`. 
-A vignette for this workstream is available at [Species Distribution Models](https://sagesteppe.github.io/safeHavens/articles/SpeciesDistributionModels.html). 
+A vignette for this work stream is available at [Species Distribution Models](https://sagesteppe.github.io/safeHavens/articles/SpeciesDistributionModels.html). 
 
 An extension to `EnvironmentalBasedSample`, that will predict the probability of suitable habitat under future climate scenarios and assign the same environmental clusters is supported by a Predictive Provenance workflow. 
 This workflow uses similar properties to the `EnvironmentalBasedSample` workflow, but does not include the PCNM surfaces or coordinate weights in the clustering outputs, as these have to corollaries under future time points. 
 Novel climates for the species are detected using the beta-coefficient variables and the MESS algorithm [@elith2010art], and these are clustered indepedent of the existing clusters, and then a second clustering process determines the most similar existing cluster, which may serve as a potential seed source for them.  
-A vignette for this workstream is available at [Predictive Provenance](https://sagesteppe.github.io/safeHavens/articles/PredictiveProvenance.html). 
+A vignette for this work stream is available at [Predictive Provenance](https://sagesteppe.github.io/safeHavens/articles/PredictiveProvenance.html). 
 
 `PolygonBasedSample` works on any type of polygon data, but is focused on supporting either provisional or empirical seed transfer zones, or ecoregion level data. 
 `PolygonBasedSample` is able to incorporate multiple user specified decisions to maximize sample numbers in various strata based on their size, number of disconnected areas, or - when the data are available, temperature. 
@@ -114,7 +102,7 @@ A visual guide to these function is available at [Polygon Based Sample](https://
 Additionally, a function for sampling rare species based on occurrence data `KMedoidsBasedSample` is included, which can run on geographic, resistance, or environmental distances. 
 When using geographic distances as input, and if coordinate uncertainty data available, this function will jitter site coordinates within the measures of uncertainty so simulate actual population positions, it will also 'drop' populations that may be extinct, incorrectly identified, or of another taxon to give results that are resilient to these types of data imperection. 
 The function uses co-location network strength to identify a set of populations that minimizes the sum of distances in 'n' user specified groups. 
-A vignette for this workstream is available at [Rare Species](https://sagesteppe.github.io/safeHavens/articles/RareSpecies.html)
+A vignette for this work stream is available at [Rare Species](https://sagesteppe.github.io/safeHavens/articles/RareSpecies.html)
 
 A final function, that exists for creating cartographic boundaries to for use with mobile GIS software is `PrioritizeSample`, which creates concentric rings around the center of each sampling unit to try and guide collectors towards center regions of collection zones rather than extremes. 
 It is detailed only in a vignette that emulates the total process of designing an actual sample design for species in [Worked Example](https://sagesteppe.github.io/safeHavens/articles/WorkedExample.html). 
@@ -275,7 +263,7 @@ Chris Woolridge https://orcid.org/0000-0002-2721-2092
 # Acknowledgements
 The Bureau of Land Management for partially funding the developement of these tools through work contracted to the Chicago Botanic Garden.
 Emily Woodworth for creating the 'Dissemination' figure. 
-Claude is acknowledged for assistance with coding developement of the `safeHavens` package. 
+Claude is acknowledged for assistance with coding development of portions the `safeHavens` package 
 
 \singlespacing  
 
