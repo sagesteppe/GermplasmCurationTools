@@ -1,12 +1,13 @@
 ---
-title: safeHavens and eSTZwritR; R packages for prioritizing germplasm collections for restoration and conservation 
+title: safeHavens and eSTZwritR; R packages for prioritising germplasm collections for restoration and conservation 
 author: "| Reed Clark Benkendorf$^1{1,2}$, Jeremie B. Fant$^{1,2}$, Sophie Taddeo$^3$, Brianna Wieferich$^2$, Chris Woolridge$^2$ \n|
   $^1$ Northwestern University, Evanston, Illinois 60208 USA  \n| 
-  $^2$ Chicago Botanic Garden, 1000 Lake Cook Road, Glencoe Illinois 60022 USA  \n
+  $^2$ Chicago Botanic Garden, 1000 Lake Cook Road, Glencoe, Illinois 60022 USA  \n
   $^3$ Department of Environmental and Ocean Sciences, University of San Diego, San Diego, California 92110, USA"
 output:
-  pdf_document: default
-  #word_document: default
+  #pdf_document: 
+  #  latex_engine: xelatex
+  word_document: default
   #html_document: default
   toc: false
   figsintext: false
@@ -24,103 +25,101 @@ header-includes:
 ---
 
 # Abstract
-The loss of plant genetic diversity poses significant risks of extinction, necessitating both in situ restoration and ex situ conservation strategies. 
-Both strategies rely on effective germplasm collection; however, curators lack standardised, species-specific tools to guide sampling decisions and consistently communicate progress globally. 
-Here we present two open-source R packages designed to address these issues. 
-safeHavens helps curators maximise the coverage of neutral genetic diversity across a species' range by partitioning the range into geographically constrained sampling zones using geographic, resistance, or environmental distances. 
-The package accommodates both abundant and data-limited species, supports future climate scenarios through a Predictive Provenance workflow, creates models suitable for guiding restoration germplasm selection, and produces geospatial outputs compatible for digital archiving and in-field use by collectors. 
-eSTZwritR addresses a complementary problem: the inconsistent formatting and dissemination of empirical seed transfer zones (eSTZs). 
+Effective germplasm collection is critical for both in situ restoration and ex situ conservation. 
+Easily accessible, spatially explicit tools are needed to identify the best strategy for germplasm collection and support positive conservation outcomes. 
+Here we present two open-source R packages designed to address these issues. The first, safeHavens, aims to maximise coverage of genetic diversity across a species' range by partitioning it into sampling zones based on geographic, resistance, and/or environmental distances. 
+The package accommodates both abundant and data-limited species, supports planning for future climate scenarios through a Predictive Provenance workflow, creates models to guide restoration germplasm selection, and produces geospatial outputs compatible with digital archiving and in-field use by collectors. 
+The second package, eSTZwritR, addresses the inconsistent formatting and dissemination of empirical seed transfer zones (eSTZs). 
 Drawing on a review of 23 eSTZ products across the western United States, we identified widespread inconsistencies in file naming, directory structure, field attributes, and cartographic elements, and developed standardised conventions to resolve them. 
 Together, these tools support the germplasm collection process from designing spatially explicit sampling schemes to sharing results with practitioners in reproducible, interoperable formats. 
-Both packages are freely available and require minimal proficiency in R. 
-We demonstrate their utility through comprehensive vignettes and anticipate that they will improve efficiency and consistency in restoration and conservation germplasm programs.
 
 # Introduction
-Current estimates suggest that 45% of flowering plant species are at risk of extinctiontion [@bachman2024extinct; @isbell2023expert].
+Current estimates suggest that 45% of flowering plant species are at risk of extinction [@bachman2024extinct; @isbell2023expert].
 This risk is in part due to the loss of genetic diversity resulting from habitat loss and fragmentation, which reduces populations’ capacity to adapt to changing conditions [@Frankham2005]. 
-Two growing responses to mitigate the loss of genetic and taxonomic diversity and lessen extinction risks include habitat restoration for *in situ* conservation and the collection and storage of plant germplasm in *ex situ* collections [@heywood2017plant; @volis2010quasi; @westwood2021botanic]. 
-Ecological restoration - the assisted recovery of habitats that have been degraded or destroyed through active or passive intervention - can increase connectivity between remnant parcels and help preserve biodiversity in situ by enhancing habitat quality and quantity [@gann2019international].
-Long-term ex situ conservation is used when a species has, or is expected to experience, the loss or alteration of its habitat beneath thresholds that can support the species' persistence in the wild [@mounce2017ex; @union2012integrated].
-Both approaches rely on the use of native propagules to populate restored habitat or ex situ collections.
-Long-term ex situ conservation is used when a species has, or is expected to experience, the loss or alteration of its habitat beneath thresholds that can support the species' persistence in the wild [ @pedrini2020collection, SHRIVER et al. 2026; @wambugu2023role]. 
+Two growing responses to mitigate the loss of genetic diversity include the collection and storage of plant germplasm in ex situ collections and the restoration of habitats *in situ* [@heywood2017plant; @volis2010quasi; @westwood2021botanic]. 
+In such cases, ex situ collections function as a stopgap measure to prevent further loss of genetic diversity and extinction while longer-term in situ conservation and habitat restoration strategies are developed and implemented to enhance habitat quality and quantity, and increase connectivity among remnant parcels [@gann2019international].
+Achieving this requires collecting plant propagules and amplifying germplasm to meet the volumes required for use in restoration and conservation projects [ @pedrini2020collection, SHRIVER et al. 2026; @wambugu2023role]. 
 
-Central to developing germplasm collections is the acquisition of adequate amounts of genetic diversity to successfully meet conservation outcomes. 
-Ex situ conservation germplasm collections aim to maximise coverage of neutral genetic variation by capturing germplasm within several phenotypes across the species range to encompass local adaptations and maximise the species’ capacity to adapt to environmental fluctuations and long-term change in live collections [@walters2021unique; SHRIVER et al 2026]. 
-In the case of in situ conservation, germplasm collections for restoration also require considering the geographic distance and habitat similarity between source material and restoration sites to best increase chances of success by using phenotypes likely to withstand environmental conditions at the restoration site [@vander2010question] while maintaining adequate allelic diversity [@johnson2010best].
+Central to developing germplasm collections is acquiring sufficient genetic diversity to meet conservation objectives. 
+Most ex situ collections aim to maximize genetic variation across a species’ geographic and ecological range, increasing the likelihood of capturing both overall diversity and variation associated with local adaptation [@walters2021unique]. 
+Representative collections can enhance reintroduction success by improving populations’ capacity to respond to environmental fluctuations and long-term change. Realising this potential requires capturing geographic and habitat variation, allowing managers to match source material to restoration sites while maintaining adequate genetic diversity [@vander2010question; @johnson2010best].
 
-Yet sourcing germplasm more broadly might also be important when local populations are small, isolated, and genetically homogenous [@st2020mixing]. 
-Seed banks commonly use minimal rule-of-thumb guidelines developed from agricultural and population genetics studies [@brown1995basic;, @hay2013advances; @westwood2021botanic]  to inform the collection of germplasm.
-These guidelines include the maximum number of propagules that can be collected to safeguard the persistence of natural populations (i.e., avoid over-harvesting), the minimum number of individuals that need sampling per population, and the number of populations to sample per species to reach genetic diversity targets [@basey2015producing; @nevill2018ethical].
-However, a variety of objectives exist at the institutional, programmatic, and bio-regional organisational levels, as well as opinions among curators, which have fostered tailored strategies beyond the aforementioned rule-of-thumb guidelines [@guerrant2014sampling].
-Furthermore, these guidelines do not guarantee achievement of goals for all species due to variations in population genetic structures or vital rates related to nuances in the biology and ecology of individual species [@whitlock2016consequences; @hoban2020taxonomic; @bucharova2025assessing; @hofner2025spatial].
-While accessioning and maintaining ex situ germplasm collections to develop propagules for restoration and conservation activities is cost-effective, collecting material across a species' range can present difficulties, including fieldwork costs, logistical challenges, limited and small populations, and environmental stochasticity [@li2009science; @erickson2020seed]. 
-When developing collection plans, there is a need to maximise genetically unique germplasm coverage and efficiency. However, systems for guiding and measuring progress relative to this principle are absent for rare taxa, and for common taxa rely on data sets that may or may not relate to an individual species biology (e.g., provisional STZs or ecoregions [@pike2020new], or require considerable research to develop [@durka2017genetic; @davidson2020spatial].
+Seed collection strategies face challenges, including fieldwork costs, logistical challenges, limited and small populations, and environmental stochasticity [@li2009science; @erickson2020seed]. 
+To maximise coverage and efficiency, seed banks often rely on rule-of-thumb guidelines derived from agricultural and population genetics studies, specifying minimum numbers of individuals per population and populations per species to meet diversity targets [@brown1995basic; @hay2013advances; @westwood2021botanic]. 
+However, these guidelines do not guarantee success for all species due to variation in population genetic structure, vital rates, and species-specific biology [@whitlock2016consequences; @hoban2020taxonomic; @bucharova2025assessing; @hofner2025spatial], and their application often relies on generalised datasets such as provisional seed transfer zones (STZs) or ecoregions, which may not reflect the biology of individual taxa [@durka2017genetic; @davidson2020spatial].
 
-Easily accessible, spatially explicit tools are critically needed to identify the best strategy for germplasm collection and promote enduring outcomes for in situ and ex situ conservation. 
-Here, we present two geospatial software packages to help curators refine and implement their collection goals. 
+Guidelines have evolved to emphasise population genetic structure, spatial sampling, and mating systems, particularly for poorly connected taxa [@loveless1984ecological;  @duminil2007can; @hoban2014optimal; @white2025application]. 
+While traditional strategies often followed a “local is best” paradigm, recent evidence highlights the benefits of maximising genetic diversity and using climate-smart source populations to improve restoration outcomes and long-term persistence under environmental change (@breed2013provenance; @broadhurst2016maximizing; Martyn Yenson et al., 2021). 
+Integrating genetic and ecological data allows managers to match source material to restoration sites, ensuring ex situ collections support both conservation and nature-based solutions. 
+Despite these advances, few empirical studies have rigorously compared the effectiveness of different seed collection strategies, highlighting the need for further research.
+
+Currently, two main approaches guide restoration germplasm collections. 
+Provisional seed transfer zones (pSTZs), the most widely used, delineate regions of similar climate (e.g., aridity, minimum winter temperatures) and may be further subdivided by ecoregions [@bower2014generalized; @pike2020new]. 
+Empirical seed transfer zones (eSTZs) integrate molecular and quantitative data from common gardens to model areas where a source population is expected to perform well [Shriver, 2026; @johnson2010best]. 
+For most taxa, however, the data required to develop empirical STZs are unavailable, making provisional STZs essential despite known limitations. 
+pSTZs may not capture the variables most important in shaping species’ distributions or adaptive variation and can be problematic for climate specialists with narrow niches or ranges [@harrison2023assessment; @johnson2010best; @hofner2025spatial]. 
+To address this, several groups have developed species-specific pSTZs using computational approaches such as random forest regression of species distributions and clustering of variable importance values to better identify adaptive variation relevant for restoration [@crow2018provisional; @parra2012improving; @marinoni2021spatiotemporal; @doherty2017matching].
+
+Given this challenge, we present two geospatial software packages that are easily accessible to identify the best strategy for germplasm collection and support positive conservation outcomes. 
 Both packages are free and open-source software (FOSS) developed in R and require minimal familiarity with R to use. 
-The first tool, safeHavens (https://sagesteppe.github.io/safeHavens/), global in coverage, aims to maximise the putative coverage of neutral genetic variation across the entirety, or subsets of, a species range. 
-The tool uses: 1) geographic, 2) ecoregional, and 3) environmental proxies to partition species ranges and create collection zones in scenarios where seed transfer zones may not align with the objectives of collections. 
-The second tool, tailored to the Western United States but globally applicable, eSTZwriter (https://sagesteppe.github.io/eSTZwritR/) assists quantitative geneticists in producing standardised geospatial data products that describe areas for targeted seed collection and restoration planning - empirical seed transfer zones, which curators may readily use.
+The first tool, safeHavens (https://sagesteppe.github.io/safeHavens/), which has global coverage, aims to maximise the putative coverage of genetic variation across the entirety or subsets of a species' range. 
+The tool uses either: 1) geographic, 2) ecoregional, or 3) environmental proxies to partition species ranges and create collection areas in scenarios where seed transfer zones may not align with the objectives of collections. 
+The second tool, tailored to the Western United States but globally applicable, eSTZwriter (https://sagesteppe.github.io/eSTZwritR/), assists quantitative geneticists in producing standardised geospatial empirical seed transfer zone data products for germplasm collectors.
 
-![Dissemination, proceeding clockwise from ‘Collections’. The first phase of collections includes the initial collection of germplasm from the wild, the most common starting point for both restoration and ex situ conservation. The next two panels primarily address quantitative genetics approaches for developing empirical seed transfer zones. At the same time, ’Dissemination` depicts the essential component of developing a curated collection that communicates priority areas to collector crews for more targeted collection. These activities support the potential for increases in agricultural or propagative production of collected germplasm and the selection of materials for restoration plantings, as described by Emily Woodworth.](./figures/Wu-naut.jpg){width=75%}  
+![’Dissemination` depicts the essential component of developing a curated collection that communicates priority areas to collector crews for more targeted collection. These activities support the potential for increases in agricultural or propagative production of collected germplasm and the selection of materials for restoration plantings, as described by Emily Woodworth.](./figures/Wu-naut.jpg){width=75%}  
 
 # safeHavens
-`safeHavens` is a landscape genetics-inspired R package that develops taxon-specific sampling schemes to guide efforts to maximise either neutral genetic diversity or adaptive potential, using a variety of computational approaches. 
-`safeHavens` partitions species ranges into geographically constrained areas by utilizing clustering of three types of distances: geographic, theoretical resistance to gene flow, or environmental, each of which has been empirically shown to influence species genetic structures, although effects are not ubiquitous across species [@mcrae2006isolation; @slatkin1993isolation; @wang2014isolation; @durka2025assessment].
 
-Species typically exhibit genetic structure throughout their geographic range, resulting from mutation, genetic drift, and regulated by gene flow [@loveless1984ecological].
-Adaptive variation is selected upon to create local adaptation when populations harbouring neutral variation are exposed to selective pressures [@chung2023neutral]. 
-These processes are themselves modulated by environmental factors that vary in space [@chung2023neutral]. 
-As populations become increasingly isolated due to geographic, resistance, or environmental distance, divergence in neutral genetic variation, adaptive variation, and genotypes may increase [@leimu2008]. 
-Isolation-by-distance occurs when differentiation between populations is driven primarily by geographic distance [@slatkin1993isolation], limiting gene flow. 
-Isolation-by-resistance describes species in which gene flow is most strongly impeded by landscape features, such as mountains and lakes [@mcrae2006isolation].
-Isolation-by-environment (IBE) occurs when genetic distance increases with environmental dissimilarity, and may operate in conjunction with either of the above. 
-In plants, IBE may arise from the habitat fidelity of pollinators or seed dispersers, or from decreased fitness of progeny expressing phenotypic traits maladapted to the recipient environment [@wang2014isolation]. 
+Genetic structure throughout a species’ range results from divergence (adaptation & genetic drift) and isolation (gene flow and migration) acting on and among populations [@duminil2007can; @hampe2005conserving]. 
+These processes are themselves modulated by environmental factors that vary in space [@chung2023neutral].
+The safeHavens package develops taxon-specific sampling schemes to maximise either genetic diversity or adaptive potential, by partitioning species ranges into geographically constrained areas by utilising three types of distances which have been empirically shown to influence species genetic structures: Euclidean distance, landscape resistance or environmental distances [@slatkin1993isolation; @mcrae2006isolation; @wang2014isolation; @durka2025assessment].
+Isolation by distance is the idea that differentiation between populations increases as geographic distance increases [@slatkin1993isolation].
+Isolation-by-resistance describes species in which gene flow is most strongly determined by landscape features that act as either barriers (mountains and lakes) or corridors (habitat) to determine movement patterns [@mcrae2006isolation].
+Isolation-by-environment (IBE) occurs when genetic distance increases with environmental dissimilarity, and may operate in conjunction with either of the above.
+In plants, IBE may arise from the habitat fidelity of pollinators or seed dispersers, or from decreased fitness of progeny expressing phenotypic traits maladapted to the recipient environment [@wang2014isolation].
 
-Considering environmental distances and their impacts on the genetic structure of species can thus inform germplasm sampling design, particularly when a species is expected to have strong local adaption (e.g. due to short generation times, strong selective pressures, or long extant populations) [CITE], resistance distances where barriers to gene flow are strong but local adaption may occur more slowly [CITE], and geographic distance where levels of local adaptation and resistance to gene flow are intermediate [@loveless1984ecological]. 
 After statistical clustering, the geographic extent of the species is assigned to spatial regions for germplasm collections. 
 These areas can be used to design germplasm collection efforts, assigning a desired number of target samples to each area, as in existing sampling approaches. 
 The geospatial data generated by this process can then be sent to field crews to guide both the planning and implementation of collections.
-
+ 
 ## Usage
 All functions require two data sources: species occurrence data (e.g., from the Global Biodiversity Information Facility) and land surface vector data (e.g., from Natural Earth). 
 Environmental modelling functions require additional raster covariates, such as bioclim variables (e.g. from Worldclim). 
 The resistance surfaces require geomorphology variables (e.g., topographic roughness from EarthEnv), and optionally hydrology vector data of lakes and rivers (e.g., from Global Lakes and Wetland Database). 
-Users may model the entire range or subsets of species ranges, depending on their collection goals; however, models based on full species ranges will yield more accurate results, due to covering more environmental space [@thuiller2004effects].
+Users may model the entire range or subsets of species ranges, depending on their collection goals; however, models based on full species ranges will yield more accurate results, as they cover more environmental space [@thuiller2004effects].
 
-The safeHavens package includes a variety of geographic functions to partition the species' range into geographic areas that can serve as a basis for structuring sampling in space. 
-`PointBasedSample` generates a systematic sampling design for a number of collection sites specified by the user. 
+The `safeHavens` package includes a variety of geographic functions to partition the species' range into geographic areas that can serve as a basis for structuring sampling in space. 
+`PointBasedSample` generates a systematic sampling design for a specified number of collection sites. 
 `EqualAreaSample` uses Voronoi polygons to create polygons of equal geographic area; `IBDBasedSample` uses an existing distance or environmental similarity raster to form polygons with similar distances and environmental conditions that can be used to structure sampling. 
 `OpportunisticSample` identifies additional sampling sites around existing collections to reach a user-specified sample size. 
-These functions use different criteria. 
 These functions are adaptable to support n collection areas, and a single collection per geographic unit. 
 A general vignette on the package, covering these functions, is available at [Getting Started](https://sagesteppe.github.io/safeHavens/articles/GettingStarted.html). 
 
-Landscape resistance to geneflow is modelled using the function IBRSurface and helpers: `buildResistanceSurface`, `populationResistance`, and an optional final draw from the generalised sampling function `PolygonBasedSample`. 
+Landscape resistance to geneflow is modelled using the function `IBRSurface` and helpers: `buildResistanceSurface`, `populationResistance`, and an optional final draw from the generalised sampling function `PolygonBasedSample`.
 A single raster surface can be used as a generic domain-specific landscape (i.e. a surface for Western North America), or surfaces can be parameterised for individual species. 
-The isolation-by-resistance workflow creates a theoretical surface, populated with user-specified values, that represents the cost of genetic material movement (e.g., fruits, seeds, and pollen) between populations; see @zeller2012estimating for caveats. 
+The isolation-by-resistance workflow creates a theoretical surface, populated with user-specified values, that represents the cost of genetic material movement (e.g., fruits, seeds, and pollen) between populations; see @zeller2012estimating for caveats.
 It then calculates distances between a subset of cells in the species range to identify clusters of habitat that are least isolated from each other. 
 A vignette on surface preparation is available at [Isolation by Resistance](https://sagesteppe.github.io/safeHavens/articles/IsolationByResistance.html). 
 
-Environmental distance, akin to the concept of isolation by environment, tailored to individual species, is modelled by `EnvironmentalBasedSample`, and helpers: `elasticSDM`, `PostProcessSDM`, `RescaleRasters`, and optionally `PolygonBasedSample` and `writeSDMResults`. 
-This workflow identifies user-supplied variables correlated with species occurrences, and clusters the species range into n specific areas using these variables and hierarchical clustering approaches, similar to approaches used in a variety of existing case studies on species-specific STZs[@crow2018provisional; @doherty2017matching; @marinoni2021spatiotemporal; @shryock2017landscape]. 
+Environmental distance, akin to the concept of isolation by environment, tailored to individual species, is modelled by `EnvironmentalBasedSample`, and helpers: elasticSDM, `PostProcessSDM`, `RescaleRasters`, and optionally `PolygonBasedSample` and `writeSDMResults`. 
+This workflow identifies user-supplied variables correlated with species occurrences, and clusters the species range into n specific areas using these variables and hierarchical clustering, similar to the approaches used in a variety of existing case studies on species-specific STZs [@crow2018provisional; @doherty2017matching; @marinoni2021spatiotemporal; @shryock2017landscape]. 
 A vignette is available at [Species Distribution Models](https://sagesteppe.github.io/safeHavens/articles/SpeciesDistributionModels.html). 
 
 An extension to `EnvironmentalBasedSample` that predicts the probability of suitable habitat under future climate scenarios, and assigns the identified environmental clusters, is supported by a Predictive Provenance workflow. 
-This workflow stems from the `EnvironmentalBasedSample` workflow but does not include the PCNM surfaces in `elasticSDM` or coordinate weights in the clustering process. 
-These novel climate areas are clustered independently of the existing forecast clusters, and the most similar existing cluster, which may serve as a potential seed source for them, is determined in two-stage clustering.
+This workflow stems from the `EnvironmentalBasedSample` workflow but does not include the PCNM surfaces in elasticSDM or coordinate weights in the clustering process. 
+These novel climate areas are clustered independently of the existing forecast clusters, and the most similar existing cluster, which may serve as a potential seed source, is identified in two-stage clustering. 
 A vignette is available at [Predictive Provenance](https://sagesteppe.github.io/safeHavens/articles/PredictiveProvenance.html). 
 
-An alternative to the `EnvironmentalBasedSample` and Predictive Provenance workflow, which uses Bayesian hierarchical modelling and consensus clustering to provide uncertainty estimates, is also available [cite coallocation, bayes in ecology review]. 
-This workflow is conceptually similar to the EnvironmentalBasedSample workflow, requiring several replacement functions, `bayesianSDM`, `RescaleRastersBayes`, `PosteriorCluster`, and `projectClusterBayes`,  to replace the predictive provenance-based workflow functions. A vignette is available at [Bayesian Approaches](https://sagesteppe.github.io/safeHavens/articles/BayesianApproaches.html). 
+An alternative to the `EnvironmentalBasedSample` and Predictive Provenance workflow, which uses Bayesian hierarchical modelling and consensus clustering to provide uncertainty estimates, is also available.
+This workflow is conceptually similar to the EnvironmentalBasedSample workflow, requiring several replacement functions, `bayesianSDM`, `RescaleRastersBayes`, `PosteriorCluster`, and `projectClusterBayes`,  to replace the predictive provenance-based workflow functions. 
+A vignette is available at [Bayesian Approaches](https://sagesteppe.github.io/safeHavens/articles/BayesianApproaches.html). 
 
-`PolygonBasedSample` works on any type of polygon data, but is focused on supporting either provisional or empirical seed transfer zones, or ecoregion level data - the two most commonly used data sources for designing seed. 
-`PolygonBasedSample` is able to incorporate multiple user specified decisions to maximize sample numbers in various strata based on their size, number of disconnected areas, or - when the data are available, temperature. 
+`PolygonBasedSample` is a general utility function that operates on any type of polygon data, but is focused on supporting existing provisional or empirical seed transfer zones, or ecoregion-level data. 
+`PolygonBasedSample` can incorporate multiple user-specified criteria to maximise sample counts across strata by size, number of disconnected areas, or, when the data are available, central tendency measures of climate variables. 
 Accordingly, it can loosely accommodate the variables that went into the generation of seed transfer zones or ecoregions. 
-A visual guide to these function is available at [Polygon Based Sample](https://sagesteppe.github.io/safeHavens/articles/PolygonBasedSamples.html). 
+A visual guide to these methods dispatched by this function is available at [Polygon Based Sample](https://sagesteppe.github.io/safeHavens/articles/PolygonBasedSamples.html). 
 
-Additionally, a function intended for sampling rare species, with few populations, based on raw population-level occurrence data, KMedoidsBasedSample, operates on geographic or environmental distances. 
+Additionally, a function intended for sampling rare species, with few populations,  based on raw population-level occurrence data, `KMedoidsBasedSample`, operates on geographic or environmental distances. 
 When geographic distances are used as input and coordinate uncertainty data are available, this function jitters site coordinates within the uncertainty bounds to simulate the position. 
 Simulations further drop populations that may be extinct, incorrectly identified, or of another taxon to identify results that are most resilient to data imperfections. 
 The function uses co-location network strength to identify a set of populations that minimises the sum of distances in ‘n’ user-specified groups. 
@@ -134,37 +133,33 @@ It is detailed only in a vignette that emulates the total process of performing 
 
 The isolation-by-resistance workflow is divided into three main phases to allow users to review, modify, and tailor intermediate objects. 
 Resistance surface rasters are created using `buildResistanceSurface`, followed by the sampling of these surfaces to create distance matrices via `populationResistance`. 
-Finally, the classification of the species range into clusters with less resistance to movement within than between them is achieved with `IBRSurface`. 
-The polygons from `IBRSurface`, if more than one collection per group is desired, are then submitted to the general sampling function `PolygonBasedSample`. 
+Finally, the classification of the species range into clusters with less resistance to movement within than between them is achieved with IBRSurface. 
+The polygons from IBRSurface, if more than one collection per group is desired, are then submitted to the general sampling function `PolygonBasedSample`. 
 `buildResistanceSurface` natively supports layers for oceans, lakes, rivers, topographic ruggedness, and a species distribution model’s probability surface, but also allows users to incorporate additional features and weights for parameterising the cost surface as desired. 
-Pairwise distances across the cost surface and between randomly sampled sites across the buffered species range are used to create a distance matrix for clustering that happens in populationResistance. 
-Sampled locations are hierarchically clustered into n groups, and pixels within their buffered species ranges are iteratively assigned to each cluster using IBRSurface, with NbClust using the silhouette method[@nbclust2014charrard]. 
+Pairwise distances across the cost surface and between randomly sampled sites across the buffered species range are used to create a distance matrix for clustering that happens in `populationResistance`. 
+Sampled locations are hierarchically clustered into n groups, and pixels within their buffered species ranges are iteratively assigned to each cluster using IBRSurface, with NbClust using the silhouette method [@nbclust2014charrard]. 
 
-The data preparation for the EnvironmentalBasedSample is compartmentalised into several functions, allowing users to review, modify, and save intermediate outputs. 
-A species distribution model, using user-specific explanatory (raster format) supplemented with internally derived low-order PCNM surfaces - uncorrelated geospatial predictors that account for large-scale geospatial relations, with internal occurrence data thinning,pseudo-absence generation, geospatial cross-validation folds, and automatic variable selection using elastic net regression and recursive feature elimination, is prepared using elasticSDM [@naimi2016sdm; @aiello-lammens2015spthin; @meyer2025cast; @kuhn2008caret; @tay2023elasticnet; @oksanen2025vegan]. 
+The data preparation for the `EnvironmentalBasedSample` is compartmentalised into several functions, allowing users to review, modify, and save intermediate outputs. A species distribution model, using user-specific explanatory (raster format) supplemented with internally derived low-order PCNM surfaces - uncorrelated geospatial predictors that account for large-scale geospatial relations, with internal occurrence data thinning, pseudo-absence generation, geospatial cross-validation folds, and automatic variable selection using elastic net regression and recursive feature elimination, is prepared using `elasticSDM` [@naimi2016sdm; @aiello-lammens2015spthin; @meyer2025cast; @kuhn2008caret; @tay2023elasticnet; @oksanen2025vegan]. 
 The raster surface predictions of habitat suitability are converted from probabilities into a binary presence/absence surface using a user-specified threshold metric. Areas of known occupancy are optionally ‘burned’ back onto this binary raster surface, resulting in a surface that maximises coverage of the species’ occupied habitat, using `PostProcessSDM` [@hijman2026terra; @hijman2024dismo]. 
 The environmental rasters, used as explanatory variables and included in the final SDM model, are rescaled based on their contributions (beta-coefficients) to the model for use in identifying clusters of the species range that share more similar relevant habitat characteristics, using `RescaleRasters`. 
-Results from these processes may then be saved using writeSDMresults. 
-The germplasm collection sample is implemented by `EnvironmentalBasedSample`, which samples and clusters n locations across the raster surface. 
+Results from these processes may then be saved using `writeSDMresults`. The germplasm collection sample is implemented by `EnvironmentalBasedSample`, which samples and clusters n locations across the raster surface. 
 A k-nearest neighbour classifier is then trained on a relatively class-balanced resampling of these clusters, and geospatial clusters are identified using its predictions [@venables2002appstats]. 
 
-`KMedoidsBasedSample` is intended for use with species with up to a couple of hundred records, and maximises geographic coverage (by minimising the sum of geographic or environmental dissimilarities) across n collections by identifying individual populations to sample, while accounting for common data quality issues in occurrence data.
+`KMedoidsBasedSample` is intended for use with species with up to a couple of hundred records, and maximises geographic coverage (by minimising the sum of geographic or environmental dissimilarities) across n collections by identifying individual populations to sample, while accounting for common data quality issues in occurrence data. 
 `KMedoidsBasedSample` is the only function in safeHavens that returns individual population-level data rather than generalised polygonal geometries for sampling. 
 From user-specified data, occurrence records that are to undergo coordinate jittering, as well as those that may undergo population dropout (due to misidentifications, conflicting taxonomy, or local extinction), are identified. 
 A user-specified number of bootstrap simulations permutes eligible sites, and updated distance matrices are fed into K-medoids repeatedly, within each run, multiple restarts are allowed to minimise the solution cost at each iteration [@maechler2025cluster]. 
 Across all bootstrap iterations, each unique combination of candidate sites (set) is counted to identify the network of sites with the lowest cost (highest co-location strength), and the individual sites within this network are ordered by the number of times they were returned across all bootstrap simulations.
 
 The Bayesian approach to IBE largely performs the same steps as the `EnvironmentalBasedSample` and predictive Provenance workflow, with modifications to better incorporate uncertainty. 
-`bayesianSDM` its model fitting function wrapper, and optionally performs forward rather than recursive feature selection, or generation of PCA axis for predictors, to identify performant variables before using `brms` with horseshoe priors to fit a model that includes a spline to reduce the effects of spatial autocorrelation of residuals on the interpretation of model parameters ([@burkner2017brms; @rcoreteam2025r; @wood2003tps; @wood2017gam].. 
-The model posteriors, a rescaled raster stack RescaleRastersBayes, are then clustered via PosteriorCuster using sampling from the posterior draws. 
-The consensus clustering results are identified via co-location, and the most stable results, alongside uncertainty estimates, are returned. 
-An extension for predictive provenance is achievable with the ProjectClusterBayes function. 
-A vignette is available at Bayesian Approaches.
+`bayesianSDM` its model fitting function wrapper, optionally performs forward rather than recursive feature selection, or generation of PCA axis for predictors, to identify performant variables before using `brms` with horseshoe priors to fit a model that includes a spline to reduce the effects of spatial autocorrelation of residuals on the interpretation of model parameters [@burkner2017brms; @rcoreteam2025r; @wood2003tps; @wood2017gam]. 
+The model posteriors, a rescaled raster stack `RescaleRastersBayes`, are then clustered via `PosteriorCuster` using sampling from the posterior draws. The consensus clustering results are identified via co-location, and the most stable results, alongside uncertainty estimates, are returned. 
+Predictive provenance functionality is supported with the `ProjectClusterBayes` function. 
 
 # eSTZwritR
 Empirical seed transfer zones (eSTZs) are gaining popularity among restoration practitioners as tools to identify the most appropriate seed source for a species at a restoration site [@mckay2005local]. 
 eSTZs are becoming more widely used for two primary reasons: 1) they are based on empirical data, such as phenotypes in a common garden, and 2) there are generally fewer zones than provisional seed transfer zones, thereby reducing the number of lineages that require cultivation in agricultural settings. 
-Although popular, developing eSTZs for a species is costly and time-consuming, often involving common gardens or genetic studies, with many populations from across the species' range incorporated as samples[@kramer2015assessing].   
+Although popular, developing eSTZs for a species is costly and time-consuming, often involving common gardens or genetic studies, with many populations from across the species' range incorporated as samples [@kramer2015assessing].   
 
 While practices for developing eSTZs are becoming more defined, to our knowledge, no standards exist for sharing eSTZ results (Supplemental 1). 
 Although eSTZs are produced by a handful of research groups, inconsistencies vary across the geospatial data products used to report and share eSTZs.
@@ -257,26 +252,25 @@ In addition to these standard field naming and placement conventions, we recomme
 # Discussion 
 Here, we present two packages to enhance the availability of native germplasm, thereby increasing the likelihood of success for terrestrial restoration and ex situ conservation. 
 Results from these tools can be used to guide field sampling activities and evaluate and report progress towards germplasm conservation goals. 
-safeHavens supplies curators and planners with tools to delineate options for sampling programs, rooted in landscape genetics, and allowing for species-specific tailoring via a variety of modelling approaches. 
+The safeHavens program supplies collectors and planners with tools to delineate options for sampling programs, rooted in landscape genetics, and allowing for species-specific tailoring via a variety of modelling approaches. 
 safeHavens has a variety of functions supporting sample designs for a wide variety of curatorial perspectives. 
 Functions may use pre-existing data sets that delineate seed collection zones (e.g. pSTZs, eSTZs, ecoregions), create collection regions based on geographic, resistance, or environmental distance, or for sampling populations directly. 
 Full functionality of the package requires only a few sources of external data, all of which are free and global in coverage. 
 eSTZwritR facilitates communication and the sharing of research findings among research groups, germplasm curators, field crews, and restoration ecologists. 
 It can be used to identify priority collection areas and identify appropriate seed sources for restoration, using empirical quantitative genetics data. 
 
-An identified improvement for eSTZs is the inclusion of spatially explicit estimates of zone uncertainty, necessarily represented by raster data. 
-In the collection regions identified in safeHavens (`elasticSDM` and `bayesianSDM`), the area of applicability surface is used to restrict predictions to multivariate regions of environmental space covered by the training set, to which the statistical models can make inferences [@meyer2025cast]. 
+An identified improvement for eSTZs is the inclusion of spatially explicit estimates of zone uncertainty, necessarily represented by raster data. In the collection regions identified in safeHavens (`elasticSDM` and `bayesianSDM`), the area of applicability surface is used to restrict predictions to multivariate regions of environmental space covered by the training set, to which the statistical models can make inference [@meyer2025cast]. 
 Within these areas, surfaces of overall group stability are returned by running multiple clustering iterations with draws from the parameter posteriors, identifying areas of more stable classification, as well as the second and third-most commonly assigned classes. 
 These uncertainty estimates can help curators and restoration ecologists hedge bets in their decisions by providing enriched contextual data [ @SHRIVER]. 
 
-Re-contextualising what “local” means for restoration in an era of rapid climate change is far from complete; however, some consensus has formed amongst practitioners (Havens and Kramer 2015, Prober 2015, Vitt et al 2022). 
-Several voices call for combining populations that are local in genetic or projected climate environmental space to the restoration site [@bucha 2019!!!!!]. 
+Re-contextualising what “local” means for restoration in an era of rapid climate change is far from complete; however, some consensus has formed amongst practitioners [@havens2015seed; @vitt2022seed; @prober2015climate]. 
+Several voices call for combining populations that are local in genetic or projected climate environmental space to the restoration site [@bucharova2019mix]. 
 safeHavens helps stratify species ranges to accommodate the collection of material for any approach, whether geographic (e.g. `IsolationByDistance`), genetic (`IsolationByResistance`), or current (`EnvironmentalBasedSample` / `PosteriorCluster`) or future environmental space (`projectClusters` / `projectClustersBayes`).
-Indeed, while this release of safeHavens does not include restoration planting guidance, several recent studies have found that decoupling collection and restoration concepts may be beneficial to gather adequate source material when it is available [@barga2023not; @davidson2020spatial; @winkler2024matching; @st2022seedlot].
+Indeed, while this release of safeHavens does not include restoration planting guidance, several recent studies have found that decoupling collection and restoration concepts may be beneficial to gather adequate source material when it is available [@barga2023not; @davidson2020spatial; @winkler2024matching; @st2022seedlot; @harrison2023assessment].
 
 
 # Conclusions
-Many opinions exist regarding the goals of restoration and germplasm conservation, as well as the suitability of various seed-sourcing strategies for restoration plantings [@vitt2022seed].
+Many opinions exist regarding the goals of restoration and germplasm conservation, as well as the suitability of various seed-sourcing strategies for restoration plantings [@vitt2022seed]. 
 Here we present free and open-source software and link to vignettes with well-documented workflows that aim to support the immediate goal of growing collections suitable for short- or long-term goals via safeHavens. 
 We further present software eSTZwritR to enhance the sharing of empirical seed transfer zone data products. 
 In closing, we hope that any parties worldwide interested in collecting native seed will be able to develop and immediately implement plans to collect materials.
