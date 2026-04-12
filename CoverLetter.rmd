@@ -1,0 +1,49 @@
+---
+output:
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+
+\begin{flushleft}
+Brianna Gross \newline
+Editor in Chief \newline
+Applications in Plant Sciences \newline
+\end{flushleft} 
+\vspace{1em}
+
+\hfill April 12^th^, 2026  
+\vspace{1em}
+
+Dear Dr. Gross, 
+\vspace{3em}
+
+I am pleased to submit a software note titled *"safeHavens and eSTZwritR; R packages for prioritising germplasm collections for restoration and conservation"* for consideration in Applications in Plant Sciences.  
+\vspace{2em}
+
+The two packages described in this manuscript are tools designed to support the development of native germplasm sources for conservation and ecological restoration.
+safeHavens, provides a flexible framework for designing germplasm sampling strategies for plant species worldwide. 
+It implements a range of computational approaches that serve as proxies for population genetic structure, spanning from straightforward geographic methods to Bayesian approaches that account for multiple sources of uncertainty. 
+eSTZwritR is built upon a comprehensive review of existing empirical seed transfer zone (eSTZ) data products and seeks to standardize access to eSTZs, the gold standard for guiding germplasm collection and restoration decisions
+\vspace{2em}
+
+Both packages are accompanied by unit and integration tests, CodeFactor scans, GitHub Pages documentation sites, metadata for AI-assisted interpretation of functionality, and most importantly comprehensive vignettes and tutorials to support there usage. 
+The manuscript describes the motivation for the software and outlines key technical capabilities, while directing readers to the vignettes for detailed, applied guidance
+\vspace{2em}
+
+Applications in Plant Sciences is an ideal venue for this work.
+By framing germplasm collection as a fundamentally collections-based activity, we hope to increase the efficiency and rigor of restoration and conservation efforts in more general alignment with natural history musems.
+APPS is praised for it's of editors, papers, and special issues, for pushing the boundary of natural history museums forward.
+\vspace{2em}
+
+We affirm that this submission is original, has not been published elsewhere, and is not under consideration by another journal. 
+Some materials detailing the functionality of eSTZwritR were presented in a more limited scope at the 2025 National Native Seed Conference poster session in Tucson Arizona; hence the name 'easy rider'. 
+There are no conflicts of interest to disclose.
+\vspace{2em}
+
+Thank you for considering this submission. 
+I look forward to your response.
+\vspace{2em}
+
+Sincerely,  
+Reed  
