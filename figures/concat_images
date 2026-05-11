@@ -1,0 +1,24 @@
+convert \
+  \( filenames.png -resize 500x \
+     -gravity SouthWest -pointsize 32 -fill black \
+     -annotate +5+2 'A' \) \
+  \( fields.png -resize 500x \
+     -gravity SouthWest -pointsize 32 -fill black \
+     -annotate +5+2 'B' \) \
+  \( maps.png -resize 500x \
+     -gravity SouthWest -pointsize 32 -fill black \
+     -annotate +5+2 'C' \) \
+  -append scored_data.png
+  
+  convert \
+  \( DirectoryStructure.png -resize 500x \
+     -gravity SouthWest -pointsize 32 -fill black \
+     -annotate +5+2 'A' \) \
+  \( FileNamingConventions.png -resize 500x \
+     -gravity SouthWest -pointsize 32 -fill black \
+     -annotate +5+2 'B' \) \
+  \( FieldNames.png -resize 500x \
+     -gravity South -splice 0x10 \
+     -gravity SouthWest -pointsize 32 -fill black \
+     -annotate +5+2 'C' \) \
+  -append suggestions.png

@@ -7,7 +7,7 @@ author: "| Reed Clark Benkendorf$^1{1,2}$, Jeremie B. Fant$^{1,2}$, Sophie Tadde
 output:
   pdf_document: 
     latex_engine: xelatex
-  word_document: default
+  #word_document: default
   #html_document: default
   toc: false
   figsintext: false
@@ -187,41 +187,36 @@ Subsequently, using consensus (wisdom of the masses) from these data, combined w
 We conducted a review of all eSTZs on the Western Wildland Environmental Threat Assessment Center (WWETAC) website as of May 1, 2024 (https://research.fs.usda.gov/pnw/products/dataandtools/datasets/seed-zone-gis-data). Each data product (file name structure, field naming conventions, and directory structure) was manually scored, and all analyses were performed in R version 4.2.1.
 
 ## Results 
+![(A) File Naming. Three inconsistencies in file names are discussed here, with the recommended data-sharing format in green and the least desirable condition in grey. (B) Field Names Shapefile. The three attributes of field names discussed here, with the most desirable condition in green, and the least desirable condition in grey. (C) Map Components (n = 20). Several essential cartographic elements - most notably a Title, a statement on data sources, and a legend for the seed zones - were missing from at least half, or nearly half, of the products inspected.](./figures/scored_data.png){width=50%}  
 
-![File Naming. Three inconsistencies in file names are discussed here, with the recommended data-sharing format in green and the least desirable condition in grey.](./figures/filenames.png){width=50%}  
-
-In Figures 2 through 4, we present inconsistencies that we believe, or have observed, to interfere with practitioners’ workflows. 
-We encountered considerable inconsistencies in file names (Figure 2), directory structure and naming (Figure 3), and the cartographic elements of the 20 maps available (Figure 4). 
+In Figure 2, we present inconsistencies that we believe, or have observed, to interfere with practitioners’ workflows. 
+We encountered considerable inconsistencies in file names (Figure 2A), directory structure and naming (Figure 2B), and the cartographic elements of the 20 maps available (Figure 2C). 
 While some consensus existed around the use of USDA NRCS-Plants codes for denoting the taxon contained in the file (Figure 2), the lack of file names mentioning what attribute about the taxon they contained (e.g. ‘zones,’ ‘seed_zone,’ ‘sz’), and the lack of specified geographic extents can make determining the specifics of the file difficult unless it is explicitly opened in a Geographic Information System (GIS) software.
 
-![Field Names Shapefile. The three attributes of field names discussed here, with the most desirable condition in green, and the least desirable condition in grey.](./figures/fields.png){width=50%}
-
-The naming of the fields (columns) within the vector data file presented the most problematic results (Figure 3). 
+The naming of the fields (columns) within the vector data file presented the most problematic results (Figure 2B). 
 Here, we focus only on three inconsistencies. 
 Different uses of polygon geometry were implemented to represent the individual seed transfer zones, that is, sometimes all portions of a seed transfer zone, when at least some components are disconnected, where stored within the same object or row (i.e., multipolygon, a data set that includes at least two spatially separated parts). 
 At other times, each discontinuous portion of the range was stored as its own polygon. 
 For most infrequent Geographic Information System (GIS) users, we observed that multipolygons can be confusing and require them to use several moderately advanced geospatial techniques to interact with. 
-Surprisingly, within each shapefile, the field denoting the seed zones was often ambiguously labelled or entirely lacking any indication (Figure 3). 
+Surprisingly, within each shapefile, the field denoting the seed zones was often ambiguously labelled or entirely lacking any indication (Figure 2B). 
 In several instances, it took several minutes to determine which field was the seed zone by toggling through and visualising many fields, despite our having already interfaced with all of these products multiple times.
-
-![Map Components (n = 20). Several essential cartographic elements - most notably a Title, a statement on data sources, and a legend for the seed zones - were missing from at least half, or nearly half, of the products inspected.](./figures/maps.png){width=50%}
 
 ## Discussion 
 There is consensus among eSTZ developers on a range of attributes related to the distribution of data products. 
 Combining these opinions with best practices for data sharing and experience as users of each existing empirical product yields the following recommendations.
 
 ### Directory Structure
-![Directory Structure. Each directory is named in yellow and spans the extent of variously coloured polygons. Individual files (or a set of files in the case of a shapefile) are depicted in black text within these directories.](./figures/DirectoryStructure.png){width=50%}
 
-eSTZs should be distributed using a predictable directory structure that makes it immediately clear where to find the content (Figure 5).
-We recommend that all directories (folders) have two main subdirectories (Figure 5), one containing the essential data products, preferably in both raster and vector data formats (see ‘Data Formats’). 
+![(A) Directory Structure. Each directory is named in yellow and spans the extent of variously coloured polygons. Individual files (or a set of files in the case of a shapefile) are depicted in black text within these directories. (B) File Naming. The four proposed components of a filename are highlighted in different colours and with appropriate cases. (C) Vector Data Field Attributes. The proposed field names for distributing vector data.](./figures/suggestions.png){width=50%}
+
+eSTZs should be distributed using a predictable directory structure that makes it immediately clear where to find the content (Figure 3A).
+We recommend that all directories (folders) have two main subdirectories (Figure 3A), one containing the essential data products, preferably in both raster and vector data formats (see ‘Data Formats’). 
 The second directory contains information related to the product, including a formatted citation for data use, a map for quick reference, and any materials describing the product's development, both as a paper and as a text file with quick metadata attributes.
 
 ### File Naming
-![File Naming. The four proposed components of a filename are highlighted in different colours and with appropriate cases.](./figures/FileNamingConventions.png){width=50%}  
 
 The files within the directory should follow an easily interpretable naming convention that allows users to import data to various software while also describing the essential attributes of the data product. 
-We recommend (Figure 6) that each file name has three main components. 
+We recommend (Figure 3B) that each file name has three main components. 
 The first component is the USDA PLANTS code. 
 The second is the method used to develop the STZ - currently one of ‘g’, ‘cg’, ‘cm’ (for genetic, common garden, and climate matched, respectively), and the final is up to the two main regions, which the product overlaps. 
 In the United States, we recommend using the 12 Department of the Interior regions, as they cover contiguous geographic expanses, are few enough to be easily remembered, and balance L2 Omernik ecoregions with state lines that are easier to remember.  
@@ -239,9 +234,8 @@ For vector data, we advocate continued use of the shapefile format, whereas for 
 In our experience, TIFs are the most widely used raster data models in ecology for non-time-series data and are supported by virtually all GIS software.  
 
 ### Vector Data Field Attributes
-![Vector Data Field Attributes. The proposed field names for distributing vector data.](./figures/FieldNames.png){width=50%}  
 
-The order of the fields (or columns) in the vector data should follow a predictable pattern (Figure 7), enabling humans to interact with the data in a graphical user interface (GUI) and quickly identify their field of interest.
+The order of the fields (or columns) in the vector data should follow a predictable pattern (Figure 3C), enabling humans to interact with the data in a graphical user interface (GUI) and quickly identify their field of interest.
 
 We recommend that each vector file include at least four fields in the following order, with the following data types.  
 1) The numeric integer (ID) is a unique number associated with each polygon in the file.   
@@ -293,8 +287,12 @@ Chris Woolridge https://orcid.org/0000-0002-2721-2092
 The Bureau of Land Management for partially funding the development of these tools through a contract with the Chicago Botanic Garden. 
 Emily Woodworth for creating the ‘Dissemination’ figure. 
 Claude, from Anthropic, is acknowledged for assistance with coding development for portions of the safeHavens package.
-\singlespacing  
+ 
 
+# Data Availability Statement
+All data used in the manuscript, those for the analyses in the eSTZwritR portion, are available at the publishers website.
+
+\singlespacing 
 # Literature Cited
 
 <div id="refs"></div>
