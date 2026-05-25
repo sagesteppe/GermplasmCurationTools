@@ -5,3 +5,10 @@ safeHavens-and-eSTZwritR--R-packages-for-prioritizing-germplasm-collections-for-
 safeHavens-and-eSTZwritR--R-packages-for-prioritizing-germplasm-collections-for-restoration-and-conservation.fff
 00_Data/
 02_Outputs/
+data/
+.Rhistory
+submittal_components/
+CoverLetter.pdf
+CoverLetter.rmd
+case_study/
+

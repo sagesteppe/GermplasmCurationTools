@@ -23,6 +23,10 @@ header-includes:
   - \usepackage{lineno}
   - \linenumbers
 ---
+```{r, setup options, echo=F,message=F}
+knitr::opts_chunk$set(echo=F,message=F,warning=F,comment = '')
+library(tidyverse)
+```
 
 # Abstract
 Effective germplasm collection is critical for both in situ restoration and ex situ conservation. 
@@ -158,6 +162,31 @@ The Bayesian approach to IBE largely performs the same steps as the `Environment
 The model posteriors, a rescaled raster stack `RescaleRastersBayes`, are then clustered via `PosteriorCuster` using sampling from the posterior draws. The consensus clustering results are identified via co-location, and the most stable results, alongside uncertainty estimates, are returned. 
 Predictive provenance functionality is supported with the `ProjectClusterBayes` function. 
 
+## safeHavens Methods (to be merged)
+```{r calculate number of records per taxon}
+occ = sf::st_read(file.path('data', 'GBIF_for_modelling.gpkg'), quiet = TRUE)
+bbox = sf::st_bbox(c(xmin = -170, ymin = 24, xmax = -48, ymax = 85))
+occ = sf::st_crop(occ, bbox)
+
+#'Lilium philadelphicum', 'Luzula multiflora'
+occ_summary = occ |>
+  sf::st_drop_geometry() |>
+  dplyr::summarise(
+    n_presence = dplyr::n(),
+    .by = 'speciesKey'
+  )
+
+rm(bbox)
+```
+
+safeHavens was used to identify areas for sourcing germplasm for a local Chicago, Illinois, USA restoration program.
+60 desired, yet difficult to source locally, species were identified through a partnership between the Chicago Botanic Garden with the Forest Preserves of Cook County.
+All occurrence records for these species from 1950 through 2025, without coordinate issues were downloaded from GBIF. 
+min `r min(occ_summary$n_presence)`, max `r scales::comma(max(occ_summary$n_presence))`, median `r round(median(occ_summary$n_presence))`. 
+Species, occurrence records in North America (within WGS84 longitude -48 to -170, latitude 24 to 85), were modelled using the Bayesian Predictive provenance workflow, using a planar projection of ESRI 102008. 
+Environmental predictors included all bioclim variables less: bio09 (excluded due to creating 'hard' surface borders in the Southeast), bio13, bio14, bio19 (all due to redundancy with seasonal metrics) were used as indepdent variables. 
+Absences were generated with a 1:2.5 ratio to presences per species, and all other parameters ran using default settings. 
+
 # eSTZwritR
 Empirical seed transfer zones (eSTZs) are gaining popularity among restoration practitioners as tools to identify the most appropriate seed source for a species at a restoration site [@mckay2005local]. 
 eSTZs are becoming more widely used for two primary reasons: 1) they are based on empirical data, such as phenotypes in a common garden, and 2) there are generally fewer zones than provisional seed transfer zones, thereby reducing the number of lineages that require cultivation in agricultural settings. 
@@ -177,7 +206,6 @@ The package is available from GitHub (https://github.com/sagesteppe/eSTZwritR) a
 The package requires only five functions to generate a directory containing the contents described above, with minimal data entry. 
 Most importantly, the entries are well-organised and easy to enter without requiring close attention to detail. 
 These results should allow for the simple utilisation of existing empirical seed-transfer zone resources. This software was designed based on a review of the data sets (Appendix 1). 
-
 
 ## Methods 
 Using 23 sets of eSTZs produced for 22 taxa across the western United States, we showed that most of the geospatial data developed and disseminated to share eSTZ results are inconsistent (Supplemental 1). 
@@ -201,7 +229,218 @@ For most infrequent Geographic Information System (GIS) users, we observed that 
 Surprisingly, within each shapefile, the field denoting the seed zones was often ambiguously labelled or entirely lacking any indication (Figure 2B). 
 In several instances, it took several minutes to determine which field was the seed zone by toggling through and visualising many fields, despite our having already interfaced with all of these products multiple times.
 
-## Discussion 
+### safeHavens Results
+
+```{r saveHavens result summary}
+eval_metrics = read_csv(
+  file.path('data','ManuscriptSummaries', 'evaluation_metrics.csv'),
+  show_col_types = F) |>
+  janitor::clean_names()
+
+eval_metrics = eval_metrics |>
+  dplyr::filter(! species %in% c('Lilium philadelphicum', 'Luzula multiflora'))
+
+eval_m = eval_metrics |>
+  summarise(
+    across(
+      where(is.numeric), 
+      list(min = min, mean = mean, max = max)
+      )
+    )
+```
+
+Two species were removed from evaluation due to substandard model performance, one Lilium philadephicum appeared to have taxonomically inconsisent applications, and difficulty in having enough 'wild' records for modelling (), the other Luzula multiflora also seems to have taoxnomic inconsistenceies (AND CITE). 
+Evaluation metrics, computed using a standard 0.5 threshold for binarizing outcomes, are shown with the removal of these records. 
+Despite only allowing for the use of additive terms, models maintain highly performant with high balanced accuracy (min = `r round(eval_m$balanced_accuracy_min, 2)`, mean = `r round(eval_m$balanced_accuracy_mean, 2)`), and high f1 scores (the ability of the model to correctly identify true occurrence records; min = `r round(eval_m$f1_min, 2)`, mean = `r round(eval_m$f1_mean, 2)`).
+Models were able to identify presence records 'sensitivity' (min = `r round(eval_m$sensitivity_min, 2)`, mean = `r round(eval_m$sensitivity_mean, 2)`), while maintaning specificity in these classifications (min = `r round(eval_m$specificity_min, 2)`, mean = `r round(eval_m$specificity_mean, 2)`)
+
+Of the nn modelled species the number of identified seed zones varied from (min = , max = , mean = ). 
+The number of eastern Provisional seed transfer zones entirely contained within these regions (US only) are: , and the average number of partially overlapping zones is: .
+XX of these are expected to have a change in seed zone between the current and SSP 4.5 projections in climate for the near future (2041-2060). 
+
+```{r}
+coefs = read_csv(
+  file.path('data','ManuscriptSummaries', 'beta_coefficients.csv'),
+  show_col_types = F) |>
+  janitor::clean_names()
+```
+
+All uncertainty intervals reported for model coefficients are 95% Bayesian credible intervals (CIs), not frequentist confidence intervals.
+A 95% credible interval has the direct probabilistic interpretation that there is a 0.95 posterior probability that the true parameter value lies within the interval, given the data and priors.
+
+```{r coef-panel, fig.width=9, fig.height=5}
+library(patchwork)
+
+bio_groups <- tibble::tribble(
+  ~variable,  ~group,           ~label,
+  "bio_01",   "Temperature",    "Mean Annual Temp",
+  "bio_02",   "Variability",    "Mean Diurnal Range",
+  "bio_03",   "Variability",    "Isothermality",
+  "bio_04",   "Variability",    "Temp Seasonality",
+  "bio_05",   "Temperature",    "Max Temp Warmest Mo.",
+  "bio_06",   "Temperature",    "Min Temp Coldest Mo.",
+  "bio_07",   "Variability",    "Temp Annual Range",
+  "bio_08",   "Temperature",    "Mean Temp Wettest Qtr",
+  "bio_10",   "Temperature",    "Mean Temp Warmest Qtr",
+  "bio_11",   "Temperature",    "Mean Temp Coldest Qtr",
+  "bio_12",   "Precipitation",  "Annual Precip",
+  "bio_15",   "Precipitation",  "Precip Seasonality",
+  "bio_16",   "Precipitation",  "Precip Wettest Qtr",
+  "bio_17",   "Precipitation",  "Precip Driest Qtr",
+  "bio_18",   "Precipitation",  "Precip Warmest Qtr"
+)
+
+group_colors <- c(Temperature = "#d62728", Variability = "#ff7f0e", Precipitation = "#1f77b4")
+
+coefs_ann <- coefs |>
+  left_join(bio_groups, by = "variable") |>
+  mutate(
+    sign_class = case_when(
+      q2_5 > 0 & q97_5 > 0 ~ "positive",
+      q2_5 < 0 & q97_5 < 0 ~ "negative",
+      TRUE                  ~ "ambiguous"
+    )
+  )
+
+# shared y-axis ordering: ascending frequency
+var_order <- coefs_ann |>
+  count(label) |>
+  arrange(n) |>
+  pull(label)
+
+coefs_ann <- coefs_ann |>
+  mutate(label = factor(label, levels = var_order))
+
+# A: frequency (count of species with this variable)
+p1 <- coefs_ann |>
+  count(group, label) |>
+  ggplot(aes(x = n, y = label, fill = group)) +
+  geom_col(width = 0.7) +
+  scale_fill_manual(values = group_colors) +
+  labs(x = "No. species", y = NULL, fill = NULL, title = "A. Frequency") +
+  theme_minimal(base_size = 15) +
+  theme(legend.position = "none")
+
+# B: median rank by |estimate| within each species model
+p2 <- coefs_ann |>
+  group_by(species) |>
+  mutate(rank = rank(-abs(estimate), ties.method = "average")) |>
+  ungroup() |>
+  group_by(group, label) |>
+  summarise(
+    med  = median(rank),
+    lo   = quantile(rank, 0.25),
+    hi   = quantile(rank, 0.75),
+    .groups = "drop"
+  ) |>
+  ggplot(aes(x = med, y = label, color = group)) +
+  geom_linerange(aes(xmin = lo, xmax = hi), linewidth = 1.5, alpha = 0.35) +
+  geom_point(size = 2.5) +
+  scale_color_manual(values = group_colors) +
+  labs(x = "Rank (|β|)", y = NULL, color = NULL, title = "B. Rank") +
+  theme_minimal(base_size = 15) +
+  theme(legend.position = "none", axis.text.y = element_blank())
+
+# C: proportion of species where coefficient is positive / negative / ambiguous
+p3 <- coefs_ann |>
+  count(group, label, sign_class) |>
+  group_by(label) |>
+  mutate(prop = n / sum(n)) |>
+  ungroup() |>
+  ggplot(aes(x = prop, y = label, fill = sign_class)) +
+  geom_col(width = 0.7) +
+  scale_fill_manual(
+    values = c(positive = "#2166ac", negative = "#d6604d", ambiguous = "grey80"),
+    breaks = c("positive", "negative", "ambiguous")
+  ) +
+  labs(x = "Proportion of species", y = NULL, fill = NULL, title = "C. Sign") +
+  theme_minimal(base_size = 15) +
+  theme(axis.text.y = element_blank())
+
+p1 + p2 + p3 + plot_layout(widths = c(1.3, 1, 1))
+```
+
+**Figure X.** Summary of BIOCLIM predictor variable selection and estimated effects across Bayesian habitat suitability models fit for `r n_distinct(coefs$species)` species.
+Variables are grouped by type: temperature (red), temperature variability (orange), and precipitation (blue).
+(A) Number of species for which each variable was retained as a predictor following forward feature selection.
+(B) Median rank of each variable by absolute posterior mean coefficient (|β|) within each species model, with interquartile range shown; rank reflects the directional contribution of each predictor to the linear component of the model and is distinct from permutation-based variable importance measures (e.g., VIP) used elsewhere to guide downstream clustering.
+(C) Proportion of species models in which each variable's 95% credible interval was entirely positive (blue), entirely negative (red), or spanned zero (grey); variables with credible intervals spanning zero are not interpreted as having a consistent directional effect.
+Precipitation variables are notable for their low frequency, low rank, and high sign ambiguity relative to temperature and temperature variability predictors, suggesting these species are more strongly temperature-limited across their ranges.
+
+---
+
+**Supplemental Figure SX.**
+
+```{r sign-vs-beta, fig.width=13, fig.height=5}
+sign_colors <- c(positive = "#2166ac", negative = "#d6604d", ambiguous = "grey60")
+
+coefs_explore <- coefs_ann |>
+  mutate(
+    abs_estimate = abs(estimate),
+    ci_width     = q97_5 - q2_5,
+    p_positive   = pnorm(estimate / est_error),
+    sign_90      = case_when(
+      p_positive > 0.90 ~ "positive",
+      p_positive < 0.10 ~ "negative",
+      TRUE              ~ "ambiguous"
+    ),
+    sign_80      = case_when(
+      p_positive > 0.80 ~ "positive",
+      p_positive < 0.20 ~ "negative",
+      TRUE              ~ "ambiguous"
+    )
+  )
+
+no_x <- theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+sign_plot <- function(data, sign_var, title, show_x = FALSE, show_y = TRUE) {
+  data |>
+    ggplot(aes(x = abs_estimate, y = ci_width, color = .data[[sign_var]])) +
+    geom_point(alpha = 0.5, size = 2) +
+    scale_color_manual(values = sign_colors, breaks = names(sign_colors)) +
+    scale_x_continuous(trans = "log1p") +
+    labs(x = "|β| (log scale)", y = "95% CI width", color = "Sign", title = title) +
+    theme_minimal(base_size = 13) +
+    if (!show_x) no_x else NULL +
+    if (!show_y) theme(axis.text.y = element_blank(), axis.title.y = element_blank()) else NULL
+}
+
+sign_bar <- function(data, sign_var, title, show_y = FALSE, show_x = FALSE) {
+  data |>
+    count(label, .data[[sign_var]]) |>
+    group_by(label) |>
+    mutate(prop = n / sum(n)) |>
+    ungroup() |>
+    ggplot(aes(x = prop, y = label, fill = .data[[sign_var]])) +
+    geom_col(width = 0.7) +
+    scale_fill_manual(values = sign_colors, breaks = names(sign_colors)) +
+    labs(x = "Proportion of species", y = NULL, fill = "Sign", title = title) +
+    theme_minimal(base_size = 13) +
+    theme(axis.text.y = if (show_y) element_text() else element_blank()) +
+    if (!show_x) no_x else NULL
+}
+
+pa <- sign_plot(coefs_explore, "sign_class", "A. Strict (95% CI)",        show_x = FALSE, show_y = TRUE)
+pb <- sign_plot(coefs_explore, "sign_90",    "B. Relaxed (P(β≠0) > 0.90)", show_x = TRUE,  show_y = FALSE)
+pc <- sign_plot(coefs_explore, "sign_80",    "C. Liberal (P(β≠0) > 0.80)", show_x = FALSE, show_y = FALSE)
+
+pd <- sign_bar(coefs_explore, "sign_class", "D. Sign — Strict (95% CI)", show_y = TRUE,  show_x = FALSE)
+pe <- sign_bar(coefs_explore, "sign_90",    "E. Sign — Relaxed (0.90)",   show_y = FALSE, show_x = TRUE)
+pf <- sign_bar(coefs_explore, "sign_80",    "F. Sign — Liberal (0.80)",   show_y = FALSE, show_x = FALSE)
+
+(pa + pb + pc) / (pd + pe + pf) + plot_layout(guides = "collect")
+```
+
+**Figure SX.** Sensitivity of posterior coefficient sign classification to threshold choice, for all retained BIOCLIM predictors across `r n_distinct(coefs$species)` Bayesian habitat suitability models.
+Three thresholds are compared: strict (95% credible interval lies entirely above or below zero; A, D), relaxed (posterior probability of a directional effect > 90%; B, E), and liberal (> 80%; C, F), the latter being consistent with conventions common in applied ecology.
+Posterior probabilities are computed as P(β > 0) = Φ(β̂ / SE) under a normal posterior approximation.
+Points and bars are colored by sign classification: consistently positive (blue), consistently negative (red), or directionally ambiguous (grey).
+(A–C) Absolute posterior mean coefficient (|β|, log-scaled) against 95% credible interval width; the log transformation resolves the large range of coefficient magnitudes across predictors and species, with variables exerting greater influence on habitat suitability predictions appearing further to the right.
+Ambiguous coefficients cluster in the lower-left — small |β|, narrow-to-moderate CI — while directional coefficients occupy the right, forming a near-linear boundary that is the expected signature of horseshoe prior regularization shrinking weakly-supported predictors toward zero.
+(D–F) Proportion of species models in which each variable's coefficient was classified as positive, negative, or ambiguous under each threshold; variable ordering matches Figure X.
+The sign distribution is robust to threshold choice, supporting the strict 95% CI criterion used in the main text.
+
+## Discussion
 There is consensus among eSTZ developers on a range of attributes related to the distribution of data products. 
 Combining these opinions with best practices for data sharing and experience as users of each existing empirical product yields the following recommendations.
 
@@ -301,3 +540,76 @@ All data used in the manuscript, those for the analyses in the eSTZwritR portion
 
 \processdelayedfloats
 \clearpage
+
+# Supplemental Materials
+
+**Supplemental Figure SX.**
+
+```{r sign-vs-beta, fig.width=13, fig.height=5}
+sign_colors <- c(positive = "#2166ac", negative = "#d6604d", ambiguous = "grey60")
+
+coefs_explore <- coefs_ann |>
+  mutate(
+    abs_estimate = abs(estimate),
+    ci_width     = q97_5 - q2_5,
+    p_positive   = pnorm(estimate / est_error),
+    sign_90      = case_when(
+      p_positive > 0.90 ~ "positive",
+      p_positive < 0.10 ~ "negative",
+      TRUE              ~ "ambiguous"
+    ),
+    sign_80      = case_when(
+      p_positive > 0.80 ~ "positive",
+      p_positive < 0.20 ~ "negative",
+      TRUE              ~ "ambiguous"
+    )
+  )
+
+sign_plot <- function(data, sign_var, title) {
+  data |>
+    ggplot(aes(x = abs_estimate, y = ci_width, color = .data[[sign_var]])) +
+    geom_point(alpha = 0.5, size = 2) +
+    scale_color_manual(values = sign_colors, breaks = names(sign_colors)) +
+    scale_x_continuous(trans = "log1p") +
+    labs(x = "|β| (log scale)", y = "95% CI width", color = "Sign", title = title) +
+    theme_minimal(base_size = 13)
+}
+
+sign_bar <- function(data, sign_var, title, show_y = FALSE) {
+  data |>
+    count(label, .data[[sign_var]]) |>
+    group_by(label) |>
+    mutate(prop = n / sum(n)) |>
+    ungroup() |>
+    ggplot(aes(x = prop, y = label, fill = .data[[sign_var]])) +
+    geom_col(width = 0.7) +
+    scale_fill_manual(values = sign_colors, breaks = names(sign_colors)) +
+    labs(x = "Proportion of species", y = NULL, fill = "Sign", title = title) +
+    theme_minimal(base_size = 13) +
+    theme(axis.text.y = if (show_y) element_text() else element_blank())
+}
+
+pa <- sign_plot(coefs_explore, "sign_class", "A. Strict\n(95% CI)") +
+  theme(legend.position = "none")
+pb <- sign_plot(coefs_explore, "sign_90",   "B. Relaxed\n(P(β≠0) > 0.90)") +
+  theme(legend.position = "none", axis.text.y = element_blank(), axis.title.y = element_blank())
+pc <- sign_plot(coefs_explore, "sign_80",   "C. Liberal\n(P(β≠0) > 0.80)") +
+  theme(axis.text.y = element_blank(), axis.title.y = element_blank())
+
+pd <- sign_bar(coefs_explore, "sign_class", "D. Sign \n Strict (95% CI)",  show_y = TRUE) +
+  theme(legend.position = "none")
+pe <- sign_bar(coefs_explore, "sign_90",   "E. Sign \n Relaxed (0.90)", show_y = FALSE) +
+  theme(legend.position = "none")
+pf <- sign_bar(coefs_explore, "sign_80",   "F. Sign \n Liberal (0.80)",  show_y = FALSE)
+
+(pa + pb + pc) / (pd + pe + pf)
+```
+
+**Figure SX.** Sensitivity of posterior coefficient sign classification to threshold choice, for all retained BIOCLIM predictors across `r n_distinct(coefs$species)` Bayesian habitat suitability models.
+Three thresholds are compared: strict (95% credible interval lies entirely above or below zero; A, D), relaxed (posterior probability of a directional effect > 90%; B, E), and liberal (> 80%; C, F), the latter being consistent with conventions common in applied ecology.
+Posterior probabilities are computed as P(β > 0) = Φ(β̂ / SE) under a normal posterior approximation.
+Points and bars are colored by sign classification: consistently positive (blue), consistently negative (red), or directionally ambiguous (grey).
+(A–C) Absolute posterior mean coefficient (|β|, log-scaled) against 95% credible interval width; the log transformation resolves the large range of coefficient magnitudes across predictors and species, with variables exerting greater influence on habitat suitability predictions appearing further to the right.
+Ambiguous coefficients cluster in the lower-left — small |β|, narrow-to-moderate CI — while directional coefficients occupy the right, forming a near-linear boundary that is the expected signature of horseshoe prior regularization shrinking weakly-supported predictors toward zero.
+(D–F) Proportion of species models in which each variable's coefficient was classified as positive, negative, or ambiguous under each threshold; variable ordering matches Figure X.
+The sign distribution is robust to threshold choice, supporting the strict 95% CI criterion used in the main text.
