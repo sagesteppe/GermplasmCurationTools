@@ -254,7 +254,13 @@ Evaluation metrics, computed using a standard 0.5 threshold for binarizing outco
 Despite only allowing for the use of additive terms, models maintain highly performant with high balanced accuracy (min = `r round(eval_m$balanced_accuracy_min, 2)`, mean = `r round(eval_m$balanced_accuracy_mean, 2)`), and high f1 scores (the ability of the model to correctly identify true occurrence records; min = `r round(eval_m$f1_min, 2)`, mean = `r round(eval_m$f1_mean, 2)`).
 Models were able to identify presence records 'sensitivity' (min = `r round(eval_m$sensitivity_min, 2)`, mean = `r round(eval_m$sensitivity_mean, 2)`), while maintaning specificity in these classifications (min = `r round(eval_m$specificity_min, 2)`, mean = `r round(eval_m$specificity_mean, 2)`)
 
-Of the nn modelled species the number of identified seed zones varied from (min = , max = , mean = ). 
+```{r}
+lyr_names = sf::st_layers(file.path('data', 'all_cluster_geometries.gpkg'))
+ct_zones = lyr_names$features
+sf::st_read(file.path('data', 'all_cluster_geometries.gpkg'))
+```
+
+Of the nn modelled species the number of identified seed zones varied from (min = `r min(ct_zones)`, max = `r max(ct_zones)`, mean = `r mean(ct_zones)`). 
 The number of eastern Provisional seed transfer zones entirely contained within these regions (US only) are: , and the average number of partially overlapping zones is: .
 XX of these are expected to have a change in seed zone between the current and SSP 4.5 projections in climate for the near future (2041-2060). 
 

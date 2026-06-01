@@ -1,0 +1,118 @@
+---
+title: "Seed Zones Interactive - Data Processing"
+format: html
+---
+
+```{r setup}
+library(sf)
+library(tidyverse)
+library(rmapshaper)
+library(jsonlite)
+library(arcgislayers)
+library(sf)
+```
+
+```{r copy down the new eastern seed zones, eval = F}
+url <- "https://services1.arcgis.com/gGHDlz6USftL5Pau/arcgis/rest/services/ESZ_v2_2/FeatureServer/0"
+lyr <- arc_open(url)
+esz <- arc_select(lyr)   # handles pagination automatically
+
+esz = select(esz, OBJECTID, SeedZone)
+esz = sf::st_transform(esz, crs = 4326)
+esz = sf::st_make_valid(esz)
+
+st_write(
+    esz, 
+    file.path('..', 'data', 'esz_v2_2.gpkg'), 
+    layer = "ESZ_v2_2",
+    append=FALSE
+    )
+
+ggplot() + 
+    geom_sf(data = esz)
+
+rm(url, lyr, esz)
+```
+
+```{r read-layers}
+p <- file.path('..', 'data', 'all_cluster_geometries.gpkg')
+lyrs <- st_layers(p)[['name']]
+
+out_dir <- file.path('..', 'docs', 'data')
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+```
+
+
+prep context layers
+```{r prep context layers, eval = F}
+cook = tigris::counties(state = 'Illinois') |>
+  filter(NAME == 'Cook') |>
+  select(geometry) |>
+  st_transform(4326)
+
+esz = sf::st_read(file.path('..', 'data', 'esz_v2_2.gpkg'), quiet = T) 
+st_write(esz, file.path(out_dir, 'EasternSeedZones.geojson'))
+
+outer_boundary <- esz |>
+  st_union() |>
+  st_cast("MULTIPOLYGON") |>
+  st_cast("POLYGON") |>
+  (\(x) {
+    # Keep only exterior ring by dropping holes
+    st_sfc(lapply(x, function(poly) {
+      st_polygon(list(poly[[1]]))  # [[1]] = exterior ring only
+    }), crs = st_crs(x))
+  })()
+
+
+esz_extent = sf::st_union(esz) 
+esz_extent = st_make_valid(esz_extent)
+
+cook = sf::st_intersection(cook, esz)
+st_write(cook, file.path(out_dir, 'CookCounty.geojson'))
+
+pstz = st_read(file.path('..', 'data', '2013_psz', '2017_New_PSZ_Labels.shp'))
+
+outer_boundary = st_transform(outer_boundary, st_crs(pstz))
+ints = sf::st_intersects(pstz, outer_boundary)
+pstz = pstz[which(lengths(ints)>0),]
+
+pstz = st_intersection(pstz, outer_boundary)
+pstz = select(pstz, c('seed_zone', "New_label", "geometry"))
+any(st_is_empty(pstz))
+st_write(pstz, file.path(out_dir, 'PSTZs.geojson'))
+
+## new eastern seed zones ## clip pstz to this extent. 
+```
+
+
+simplify geometries for more reactive display
+```{r}
+esz = sf::st_read(file.path(out_dir, 'EasternSeedZones.geojson'))
+esz = rmapshaper::ms_simplify(esz)
+st_write(esz, file.path(out_dir, 'EasternSeedZones.geojson'), append=F)
+
+pstz = sf::st_read(file.path(out_dir, 'PSTZs.geojson'))
+pstz = rmapshaper::ms_simplify(pstz)
+pstz = sf::st_transform(pstz, 4326)
+
+st_write(pstz, file.path(out_dir, 'PSTZs.geojson'))
+```
+
+```{r process-and-export}
+for (lyr in lyrs) {
+  geom <- st_read(p, layer = lyr, quiet = TRUE)
+  geom <- st_transform(geom, 4326)
+  geom <- ms_simplify(geom, keep = 0.05, keep_shapes = TRUE)
+  geom <- sf::st_make_valid(geom)
+  out_path <- file.path(out_dir, paste0(lyr, '.geojson'))
+  st_write(geom, out_path, delete_dsn = TRUE, quiet = TRUE)
+  message("exported: ", lyr)
+}
+
+# Layer manifest so the web app knows which files exist
+writeLines(
+    toJSON(lyrs, auto_unbox = FALSE), 
+    file.path(out_dir, 'layers.json')
+    )
+```
