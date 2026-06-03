@@ -232,13 +232,13 @@ In several instances, it took several minutes to determine which field was the s
 ### safeHavens Results
 
 ```{r saveHavens result summary}
-eval_metrics = read_csv(
+eval_metrics = readr::read_csv(
   file.path('data','ManuscriptSummaries', 'evaluation_metrics.csv'),
   show_col_types = F) |>
   janitor::clean_names()
 
 eval_metrics = eval_metrics |>
-  dplyr::filter(! species %in% c('Lilium philadelphicum', 'Luzula multiflora'))
+  dplyr::filter(! species %in% c('Lilium philadelphicum'))
 
 eval_m = eval_metrics |>
   summarise(
@@ -257,7 +257,6 @@ Models were able to identify presence records 'sensitivity' (min = `r round(eval
 ```{r}
 lyr_names = sf::st_layers(file.path('data', 'all_cluster_geometries.gpkg'))
 ct_zones = lyr_names$features
-sf::st_read(file.path('data', 'all_cluster_geometries.gpkg'))
 ```
 
 Of the nn modelled species the number of identified seed zones varied from (min = `r min(ct_zones)`, max = `r max(ct_zones)`, mean = `r mean(ct_zones)`). 
@@ -274,7 +273,7 @@ coefs = read_csv(
 All uncertainty intervals reported for model coefficients are 95% Bayesian credible intervals (CIs), not frequentist confidence intervals.
 A 95% credible interval has the direct probabilistic interpretation that there is a 0.95 posterior probability that the true parameter value lies within the interval, given the data and priors.
 
-```{r coef-panel, fig.width=9, fig.height=5}
+```{r coef-panel, fig.width=9, fig.height=5, fig.cap=paste0("Summary of BIOCLIM predictor variable selection and estimated effects across Bayesian habitat suitability models fit for ", n_distinct(coefs$species), " species. Variables are grouped by type: temperature (red), temperature variability (orange), and precipitation (blue). (A) Number of species for which each variable was retained as a predictor following forward feature selection. (B) Median rank of each variable by absolute posterior mean coefficient (|β|) within each species model, with interquartile range shown; rank reflects the directional contribution of each predictor to the linear component of the model and is distinct from permutation-based variable importance measures (e.g., VIP) used elsewhere to guide downstream clustering. (C) Proportion of species models in which each variable's 95% credible interval was entirely positive (blue), entirely negative (red), or spanned zero (grey); variables with credible intervals spanning zero are not interpreted as having a consistent directional effect. Precipitation variables are notable for their low frequency, low rank, and high sign ambiguity relative to temperature and temperature variability predictors, suggesting these species are more strongly temperature-limited across their ranges.")}
 library(patchwork)
 
 bio_groups <- tibble::tribble(
@@ -343,7 +342,7 @@ p2 <- coefs_ann |>
   geom_linerange(aes(xmin = lo, xmax = hi), linewidth = 1.5, alpha = 0.35) +
   geom_point(size = 2.5) +
   scale_color_manual(values = group_colors) +
-  labs(x = "Rank (|β|)", y = NULL, color = NULL, title = "B. Rank") +
+  labs(x = expression("Rank (|"*beta*"|)"), y = NULL, color = NULL, title = "B. Rank") +
   theme_minimal(base_size = 15) +
   theme(legend.position = "none", axis.text.y = element_blank())
 
@@ -365,86 +364,6 @@ p3 <- coefs_ann |>
 
 p1 + p2 + p3 + plot_layout(widths = c(1.3, 1, 1))
 ```
-
-**Figure X.** Summary of BIOCLIM predictor variable selection and estimated effects across Bayesian habitat suitability models fit for `r n_distinct(coefs$species)` species.
-Variables are grouped by type: temperature (red), temperature variability (orange), and precipitation (blue).
-(A) Number of species for which each variable was retained as a predictor following forward feature selection.
-(B) Median rank of each variable by absolute posterior mean coefficient (|β|) within each species model, with interquartile range shown; rank reflects the directional contribution of each predictor to the linear component of the model and is distinct from permutation-based variable importance measures (e.g., VIP) used elsewhere to guide downstream clustering.
-(C) Proportion of species models in which each variable's 95% credible interval was entirely positive (blue), entirely negative (red), or spanned zero (grey); variables with credible intervals spanning zero are not interpreted as having a consistent directional effect.
-Precipitation variables are notable for their low frequency, low rank, and high sign ambiguity relative to temperature and temperature variability predictors, suggesting these species are more strongly temperature-limited across their ranges.
-
----
-
-**Supplemental Figure SX.**
-
-```{r sign-vs-beta, fig.width=13, fig.height=5}
-sign_colors <- c(positive = "#2166ac", negative = "#d6604d", ambiguous = "grey60")
-
-coefs_explore <- coefs_ann |>
-  mutate(
-    abs_estimate = abs(estimate),
-    ci_width     = q97_5 - q2_5,
-    p_positive   = pnorm(estimate / est_error),
-    sign_90      = case_when(
-      p_positive > 0.90 ~ "positive",
-      p_positive < 0.10 ~ "negative",
-      TRUE              ~ "ambiguous"
-    ),
-    sign_80      = case_when(
-      p_positive > 0.80 ~ "positive",
-      p_positive < 0.20 ~ "negative",
-      TRUE              ~ "ambiguous"
-    )
-  )
-
-no_x <- theme(axis.text.x = element_blank(), axis.title.x = element_blank())
-
-sign_plot <- function(data, sign_var, title, show_x = FALSE, show_y = TRUE) {
-  data |>
-    ggplot(aes(x = abs_estimate, y = ci_width, color = .data[[sign_var]])) +
-    geom_point(alpha = 0.5, size = 2) +
-    scale_color_manual(values = sign_colors, breaks = names(sign_colors)) +
-    scale_x_continuous(trans = "log1p") +
-    labs(x = "|β| (log scale)", y = "95% CI width", color = "Sign", title = title) +
-    theme_minimal(base_size = 13) +
-    if (!show_x) no_x else NULL +
-    if (!show_y) theme(axis.text.y = element_blank(), axis.title.y = element_blank()) else NULL
-}
-
-sign_bar <- function(data, sign_var, title, show_y = FALSE, show_x = FALSE) {
-  data |>
-    count(label, .data[[sign_var]]) |>
-    group_by(label) |>
-    mutate(prop = n / sum(n)) |>
-    ungroup() |>
-    ggplot(aes(x = prop, y = label, fill = .data[[sign_var]])) +
-    geom_col(width = 0.7) +
-    scale_fill_manual(values = sign_colors, breaks = names(sign_colors)) +
-    labs(x = "Proportion of species", y = NULL, fill = "Sign", title = title) +
-    theme_minimal(base_size = 13) +
-    theme(axis.text.y = if (show_y) element_text() else element_blank()) +
-    if (!show_x) no_x else NULL
-}
-
-pa <- sign_plot(coefs_explore, "sign_class", "A. Strict (95% CI)",        show_x = FALSE, show_y = TRUE)
-pb <- sign_plot(coefs_explore, "sign_90",    "B. Relaxed (P(β≠0) > 0.90)", show_x = TRUE,  show_y = FALSE)
-pc <- sign_plot(coefs_explore, "sign_80",    "C. Liberal (P(β≠0) > 0.80)", show_x = FALSE, show_y = FALSE)
-
-pd <- sign_bar(coefs_explore, "sign_class", "D. Sign — Strict (95% CI)", show_y = TRUE,  show_x = FALSE)
-pe <- sign_bar(coefs_explore, "sign_90",    "E. Sign — Relaxed (0.90)",   show_y = FALSE, show_x = TRUE)
-pf <- sign_bar(coefs_explore, "sign_80",    "F. Sign — Liberal (0.80)",   show_y = FALSE, show_x = FALSE)
-
-(pa + pb + pc) / (pd + pe + pf) + plot_layout(guides = "collect")
-```
-
-**Figure SX.** Sensitivity of posterior coefficient sign classification to threshold choice, for all retained BIOCLIM predictors across `r n_distinct(coefs$species)` Bayesian habitat suitability models.
-Three thresholds are compared: strict (95% credible interval lies entirely above or below zero; A, D), relaxed (posterior probability of a directional effect > 90%; B, E), and liberal (> 80%; C, F), the latter being consistent with conventions common in applied ecology.
-Posterior probabilities are computed as P(β > 0) = Φ(β̂ / SE) under a normal posterior approximation.
-Points and bars are colored by sign classification: consistently positive (blue), consistently negative (red), or directionally ambiguous (grey).
-(A–C) Absolute posterior mean coefficient (|β|, log-scaled) against 95% credible interval width; the log transformation resolves the large range of coefficient magnitudes across predictors and species, with variables exerting greater influence on habitat suitability predictions appearing further to the right.
-Ambiguous coefficients cluster in the lower-left — small |β|, narrow-to-moderate CI — while directional coefficients occupy the right, forming a near-linear boundary that is the expected signature of horseshoe prior regularization shrinking weakly-supported predictors toward zero.
-(D–F) Proportion of species models in which each variable's coefficient was classified as positive, negative, or ambiguous under each threshold; variable ordering matches Figure X.
-The sign distribution is robust to threshold choice, supporting the strict 95% CI criterion used in the main text.
 
 ## Discussion
 There is consensus among eSTZ developers on a range of attributes related to the distribution of data products. 
@@ -523,7 +442,6 @@ B.W. contributed to the conceptualisation of the eSTZwritR package, collected al
 J.B.F, S.T., and C.W. contributed to writing the manuscript.
 
 # ORCID
-Reed Benkendorf https://orcid.org/0000-0003-3110-6687   
 Jeremie Fant https://orcid.org/0000-0001-9276-1111  
 Sophie Taddeo https://orcid.org/0000-0002-7789-1417  
 Chris Woolridge https://orcid.org/0000-0002-2721-2092  
@@ -549,9 +467,10 @@ All data used in the manuscript, those for the analyses in the eSTZwritR portion
 
 # Supplemental Materials
 
-**Supplemental Figure SX.**
+## TITLE REQUIRED 
 
-```{r sign-vs-beta, fig.width=13, fig.height=5}
+```{r sign-vs-beta, fig.width=9, fig.height=11}
+
 sign_colors <- c(positive = "#2166ac", negative = "#d6604d", ambiguous = "grey60")
 
 coefs_explore <- coefs_ann |>
@@ -568,7 +487,8 @@ coefs_explore <- coefs_ann |>
       p_positive > 0.80 ~ "positive",
       p_positive < 0.20 ~ "negative",
       TRUE              ~ "ambiguous"
-    )
+    ),
+    label        = toupper(gsub("_", " ", variable))
   )
 
 sign_plot <- function(data, sign_var, title) {
@@ -577,7 +497,7 @@ sign_plot <- function(data, sign_var, title) {
     geom_point(alpha = 0.5, size = 2) +
     scale_color_manual(values = sign_colors, breaks = names(sign_colors)) +
     scale_x_continuous(trans = "log1p") +
-    labs(x = "|β| (log scale)", y = "95% CI width", color = "Sign", title = title) +
+    labs(x = expression("|"*beta*"| (log scale)"), y = "95% CI width", color = "Sign", title = title) +
     theme_minimal(base_size = 13)
 }
 
@@ -590,32 +510,37 @@ sign_bar <- function(data, sign_var, title, show_y = FALSE) {
     ggplot(aes(x = prop, y = label, fill = .data[[sign_var]])) +
     geom_col(width = 0.7) +
     scale_fill_manual(values = sign_colors, breaks = names(sign_colors)) +
+    scale_y_discrete(limits = rev) +
     labs(x = "Proportion of species", y = NULL, fill = "Sign", title = title) +
     theme_minimal(base_size = 13) +
     theme(axis.text.y = if (show_y) element_text() else element_blank())
 }
 
+y_angle <- theme(axis.text.y = element_text(angle = 45, hjust = 1, vjust = 1, size = rel(0.67)))
+
 pa <- sign_plot(coefs_explore, "sign_class", "A. Strict\n(95% CI)") +
   theme(legend.position = "none")
-pb <- sign_plot(coefs_explore, "sign_90",   "B. Relaxed\n(P(β≠0) > 0.90)") +
-  theme(legend.position = "none", axis.text.y = element_blank(), axis.title.y = element_blank())
-pc <- sign_plot(coefs_explore, "sign_80",   "C. Liberal\n(P(β≠0) > 0.80)") +
-  theme(axis.text.y = element_blank(), axis.title.y = element_blank())
-
-pd <- sign_bar(coefs_explore, "sign_class", "D. Sign \n Strict (95% CI)",  show_y = TRUE) +
+pb <- sign_plot(coefs_explore, "sign_90",   bquote(atop("B. Relaxed", "(P("*beta*" != 0) > 0.90)"))) +
   theme(legend.position = "none")
-pe <- sign_bar(coefs_explore, "sign_90",   "E. Sign \n Relaxed (0.90)", show_y = FALSE) +
-  theme(legend.position = "none")
-pf <- sign_bar(coefs_explore, "sign_80",   "F. Sign \n Liberal (0.80)",  show_y = FALSE)
+pc <- sign_plot(coefs_explore, "sign_80",   bquote(atop("C. Liberal", "(P("*beta*" != 0) > 0.80)"))) +
+  theme(legend.position = "bottom")
 
-(pa + pb + pc) / (pd + pe + pf)
+pd <- sign_bar(coefs_explore, "sign_class", "D. Sign\nStrict (95% CI)",  show_y = TRUE) +
+  theme(legend.position = "none") + y_angle
+pe <- sign_bar(coefs_explore, "sign_90",   "E. Sign\nRelaxed (0.90)", show_y = T) +
+  theme(legend.position = "none") + y_angle
+pf <- sign_bar(coefs_explore, "sign_80",   "F. Sign\nLiberal (0.80)",  show_y = T) +
+  theme(legend.position = "bottom") + y_angle
+
+(pa / pb / pc) | (pd / pe / pf)
 ```
 
 **Figure SX.** Sensitivity of posterior coefficient sign classification to threshold choice, for all retained BIOCLIM predictors across `r n_distinct(coefs$species)` Bayesian habitat suitability models.
-Three thresholds are compared: strict (95% credible interval lies entirely above or below zero; A, D), relaxed (posterior probability of a directional effect > 90%; B, E), and liberal (> 80%; C, F), the latter being consistent with conventions common in applied ecology.
-Posterior probabilities are computed as P(β > 0) = Φ(β̂ / SE) under a normal posterior approximation.
+Three thresholds are compared: strict (95% credible interval lies entirely above or below zero; A, D), relaxed (posterior probability of a directional effect > 90%; B, E), and liberal (> 80%; C, F), the latter being consistent with conventions common in land management.
+Posterior probabilities are computed as P($\beta$ > 0) = Φ($\beta$^ / SE) under a normal posterior approximation.
 Points and bars are colored by sign classification: consistently positive (blue), consistently negative (red), or directionally ambiguous (grey).
-(A–C) Absolute posterior mean coefficient (|β|, log-scaled) against 95% credible interval width; the log transformation resolves the large range of coefficient magnitudes across predictors and species, with variables exerting greater influence on habitat suitability predictions appearing further to the right.
-Ambiguous coefficients cluster in the lower-left — small |β|, narrow-to-moderate CI — while directional coefficients occupy the right, forming a near-linear boundary that is the expected signature of horseshoe prior regularization shrinking weakly-supported predictors toward zero.
+(A–C) Absolute posterior mean coefficient (|$\beta$|, log-scaled) against 95% credible interval width; the log transformation resolves the large range of coefficient magnitudes across predictors and species, with variables exerting greater influence on habitat suitability predictions appearing further to the right.
+Ambiguous coefficients cluster in the lower-left — small |$\beta$|, narrow-to-moderate CI — while directional coefficients occupy the right, forming a near-linear boundary that is the expected signature of horseshoe prior regularization shrinking weakly-supported predictors toward zero.
 (D–F) Proportion of species models in which each variable's coefficient was classified as positive, negative, or ambiguous under each threshold; variable ordering matches Figure X.
 The sign distribution is robust to threshold choice, supporting the strict 95% CI criterion used in the main text.
+
