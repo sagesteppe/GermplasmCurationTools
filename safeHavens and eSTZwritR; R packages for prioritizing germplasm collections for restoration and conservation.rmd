@@ -26,6 +26,7 @@ header-includes:
 ```{r, setup options, echo=F,message=F}
 knitr::opts_chunk$set(echo=F,message=F,warning=F,comment = '')
 library(tidyverse)
+library(patchwork)
 ```
 
 # Abstract
@@ -162,7 +163,30 @@ The Bayesian approach to IBE largely performs the same steps as the `Environment
 The model posteriors, a rescaled raster stack `RescaleRastersBayes`, are then clustered via `PosteriorCuster` using sampling from the posterior draws. The consensus clustering results are identified via co-location, and the most stable results, alongside uncertainty estimates, are returned. 
 Predictive provenance functionality is supported with the `ProjectClusterBayes` function. 
 
-## safeHavens Methods (to be merged)
+
+
+## eSTZwritR
+Empirical seed transfer zones (eSTZs) are gaining popularity among restoration practitioners as tools to identify the most appropriate seed source for a species at a restoration site [@mckay2005local]. 
+eSTZs are becoming more widely used for two primary reasons: 1) they are based on empirical data, such as phenotypes in a common garden, and 2) there are generally fewer zones than provisional seed transfer zones, thereby reducing the number of lineages that require cultivation in agricultural settings. 
+Although popular, developing eSTZs for a species is costly and time-consuming, often involving common gardens or genetic studies, with many populations from across the species' range incorporated as samples [@kramer2015assessing].   
+While practices for developing eSTZs are becoming more defined, to our knowledge, no standards exist for sharing eSTZ results (Supplemental 1). 
+Although eSTZs are produced by a handful of research groups, inconsistencies vary across the geospatial data products used to report and share eSTZs.
+
+The success of a restoration project depends on the timely application of techniques appropriate to the site. Hence, the dissemination of ideas during and after a restoration project is the best opportunity to improve restoration outcomes (Figure 1). 
+However, geospatial data are notoriously complex and difficult to transmit, historically requiring specialised software, and both written and geographic data (e.g., coordinates and their relationships) in the form of geospatial data products (e.g., rasters and shapefiles) to convey their meaning accurately. 
+Given the relative complexity of communicating precise geospatial information, standards should exist to ensure not only its accuracy and precision but also its ease of interpretation and use.
+
+## Software
+To make these suggestions easy to implement, we have created an R package, eSTZwritR (pronounced ‘easy rider’), that implements all of them, except for statistical processing, with minimal user input. 
+The package is available from GitHub (https://github.com/sagesteppe/eSTZwritR) and includes a GitHub Pages website (https://sagesteppe.github.io/eSTZwritR/) for users seeking a better understanding of its functionality, which provides supplemental figures and details not discussed here.
+
+The package requires only five functions to generate a directory containing the contents described above, with minimal data entry. 
+Most importantly, the entries are well-organised and easy to enter without requiring close attention to detail. 
+These results should allow for the simple utilization of existing empirical seed-transfer zone resources. This software was designed based on a review of the data sets (Appendix 1). 
+
+## Methods 
+
+### safeHavens
 ```{r calculate number of records per taxon}
 occ = sf::st_read(file.path('data', 'GBIF_for_modelling.gpkg'), quiet = TRUE)
 bbox = sf::st_bbox(c(xmin = -170, ymin = 24, xmax = -48, ymax = 85))
@@ -179,40 +203,21 @@ occ_summary = occ |>
 rm(bbox)
 ```
 
-safeHavens was used to identify areas for sourcing germplasm for a local Chicago, Illinois, USA restoration program.
-60 desired, yet difficult to source locally, species were identified through a partnership between the Chicago Botanic Garden with the Forest Preserves of Cook County.
-All occurrence records for these species from 1950 through 2025, without coordinate issues were downloaded from GBIF. 
+safeHavens was used to identify areas for sourcing germplasm for restoration projects in the Chicago region, Illinois USA.
+60 desired, yet difficult to source locally, species were identified through a partnership between the Chicago Botanic Garden and the Forest Preserves of Cook County.
+All occurrence records for these species from 1950 through 2025, without coordinate issues were downloaded from Global Biodiversity Information Facility [@gbif2026gheqjr]. 
 min `r min(occ_summary$n_presence)`, max `r scales::comma(max(occ_summary$n_presence))`, median `r round(median(occ_summary$n_presence))`. 
 Species, occurrence records in North America (within WGS84 longitude -48 to -170, latitude 24 to 85), were modelled using the Bayesian Predictive provenance workflow, using a planar projection of ESRI 102008. 
-Environmental predictors included all bioclim variables less: bio09 (excluded due to creating 'hard' surface borders in the Southeast), bio13, bio14, bio19 (all due to redundancy with seasonal metrics) were used as indepdent variables. 
+Environmental predictors included all bioclim variables less: bio09 (excluded due to creating 'hard' surface borders in the Southeast), bio13, bio14, bio19 (all due to redundancy with seasonal metrics) were used as independent variables; historic and current data from WorldClim2, and future data from CMIP6 [@hijman2026geodata; @fick2017worldclim; @swart2019canesm5]. 
 Absences were generated with a 1:2.5 ratio to presences per species, and all other parameters ran using default settings. 
 
-# eSTZwritR
-Empirical seed transfer zones (eSTZs) are gaining popularity among restoration practitioners as tools to identify the most appropriate seed source for a species at a restoration site [@mckay2005local]. 
-eSTZs are becoming more widely used for two primary reasons: 1) they are based on empirical data, such as phenotypes in a common garden, and 2) there are generally fewer zones than provisional seed transfer zones, thereby reducing the number of lineages that require cultivation in agricultural settings. 
-Although popular, developing eSTZs for a species is costly and time-consuming, often involving common gardens or genetic studies, with many populations from across the species' range incorporated as samples [@kramer2015assessing].   
-
-While practices for developing eSTZs are becoming more defined, to our knowledge, no standards exist for sharing eSTZ results (Supplemental 1). 
-Although eSTZs are produced by a handful of research groups, inconsistencies vary across the geospatial data products used to report and share eSTZs.
-
-The success of a restoration project depends on the timely application of techniques appropriate to the site. Hence, the dissemination of ideas during and after a restoration project is the best opportunity to improve restoration outcomes (Figure 1). 
-However, geospatial data are notoriously complex and difficult to transmit, historically requiring specialised software, and both written and geographic data (e.g., coordinates and their relationships) in the form of geospatial data products (e.g., rasters and shapefiles) to convey their meaning accurately. 
-Given the relative complexity of communicating precise geospatial information, standards should exist to ensure not only its accuracy and precision but also its ease of interpretation and use.
-
-## Software
-To make these suggestions easy to implement, we have created an R package, eSTZwritR (pronounced ‘easy rider’), that implements all of them, except for statistical processing, with minimal user input. 
-The package is available from GitHub (https://github.com/sagesteppe/eSTZwritR) and includes a GitHub Pages website (https://sagesteppe.github.io/eSTZwritR/) for users seeking a better understanding of its functionality, which provides supplemental figures and details not discussed here.
-
-The package requires only five functions to generate a directory containing the contents described above, with minimal data entry. 
-Most importantly, the entries are well-organised and easy to enter without requiring close attention to detail. 
-These results should allow for the simple utilisation of existing empirical seed-transfer zone resources. This software was designed based on a review of the data sets (Appendix 1). 
-
-## Methods 
+### eSTZwritR
 Using 23 sets of eSTZs produced for 22 taxa across the western United States, we showed that most of the geospatial data developed and disseminated to share eSTZ results are inconsistent (Supplemental 1). 
 We have already observed significant hindrances to the uptake of these data at the practitioner level and have sought consensus among them. 
 Subsequently, using consensus (wisdom of the masses) from these data, combined with standard data-sharing conventions, we present a set of guiding standards for researchers in the United States to help ensure more consistent results.
 
-We conducted a review of all eSTZs on the Western Wildland Environmental Threat Assessment Center (WWETAC) website as of May 1, 2024 (https://research.fs.usda.gov/pnw/products/dataandtools/datasets/seed-zone-gis-data). Each data product (file name structure, field naming conventions, and directory structure) was manually scored, and all analyses were performed in R version 4.2.1.
+We conducted a review of all eSTZs on the Western Wildland Environmental Threat Assessment Center (WWETAC) website as of May 1, 2024 (https://research.fs.usda.gov/pnw/products/dataandtools/datasets/seed-zone-gis-data). 
+Each data product (file name structure, field naming conventions, and directory structure) was manually scored, and all analyses were performed in R version 4.2.1.
 
 ## Results 
 ![(A) File Naming. Three inconsistencies in file names are discussed here, with the recommended data-sharing format in green and the least desirable condition in grey. (B) Field Names Shapefile. The three attributes of field names discussed here, with the most desirable condition in green, and the least desirable condition in grey. (C) Map Components (n = 20). Several essential cartographic elements - most notably a Title, a statement on data sources, and a legend for the seed zones - were missing from at least half, or nearly half, of the products inspected.](./figures/scored_data.png){width=50%}  
@@ -249,17 +254,17 @@ eval_m = eval_metrics |>
     )
 ```
 
-Two species were removed from evaluation due to substandard model performance, one Lilium philadephicum appeared to have taxonomically inconsisent applications, and difficulty in having enough 'wild' records for modelling (), the other Luzula multiflora also seems to have taoxnomic inconsistenceies (AND CITE). 
+Two species were removed from evaluation due to substandard model performance, one *Lilium philadephicum* appeared to have taxonomically inconsistent applications, and difficulty in having enough 'wild' records for modelling (), the other *Luzula multiflora* also seems to have taxonomic inconsistences (AND CITE). 
 Evaluation metrics, computed using a standard 0.5 threshold for binarizing outcomes, are shown with the removal of these records. 
-Despite only allowing for the use of additive terms, models maintain highly performant with high balanced accuracy (min = `r round(eval_m$balanced_accuracy_min, 2)`, mean = `r round(eval_m$balanced_accuracy_mean, 2)`), and high f1 scores (the ability of the model to correctly identify true occurrence records; min = `r round(eval_m$f1_min, 2)`, mean = `r round(eval_m$f1_mean, 2)`).
-Models were able to identify presence records 'sensitivity' (min = `r round(eval_m$sensitivity_min, 2)`, mean = `r round(eval_m$sensitivity_mean, 2)`), while maintaning specificity in these classifications (min = `r round(eval_m$specificity_min, 2)`, mean = `r round(eval_m$specificity_mean, 2)`)
+Despite only allowing for the use of additive terms, models maintain highly performant with high balanced accuracy (min = `r round(eval_m$balanced_accuracy_min, 2)`, mean = `r round(eval_m$balanced_accuracy_mean, 2)`), and high F1 scores (the ability of the model to correctly identify true occurrence records; min = `r round(eval_m$f1_min, 2)`, mean = `r round(eval_m$f1_mean, 2)`).
+Models were able to identify presence records 'sensitivity' (min = `r round(eval_m$sensitivity_min, 2)`, mean = `r round(eval_m$sensitivity_mean, 2)`), while maintaining specificity in these classifications (min = `r round(eval_m$specificity_min, 2)`, mean = `r round(eval_m$specificity_mean, 2)`)
 
 ```{r}
 lyr_names = sf::st_layers(file.path('data', 'all_cluster_geometries.gpkg'))
 ct_zones = lyr_names$features
 ```
 
-Of the nn modelled species the number of identified seed zones varied from (min = `r min(ct_zones)`, max = `r max(ct_zones)`, mean = `r mean(ct_zones)`). 
+Of the `r nrow(eval_metrics)` modelled species the number of identified seed zones varied from (min = `r min(ct_zones)`, max = `r max(ct_zones)`, mean = `r mean(ct_zones)`). 
 The number of eastern Provisional seed transfer zones entirely contained within these regions (US only) are: , and the average number of partially overlapping zones is: .
 XX of these are expected to have a change in seed zone between the current and SSP 4.5 projections in climate for the near future (2041-2060). 
 
@@ -273,8 +278,7 @@ coefs = read_csv(
 All uncertainty intervals reported for model coefficients are 95% Bayesian credible intervals (CIs), not frequentist confidence intervals.
 A 95% credible interval has the direct probabilistic interpretation that there is a 0.95 posterior probability that the true parameter value lies within the interval, given the data and priors.
 
-```{r coef-panel, fig.width=9, fig.height=5, fig.cap=paste0("Summary of BIOCLIM predictor variable selection and estimated effects across Bayesian habitat suitability models fit for ", n_distinct(coefs$species), " species. Variables are grouped by type: temperature (red), temperature variability (orange), and precipitation (blue). (A) Number of species for which each variable was retained as a predictor following forward feature selection. (B) Median rank of each variable by absolute posterior mean coefficient (|β|) within each species model, with interquartile range shown; rank reflects the directional contribution of each predictor to the linear component of the model and is distinct from permutation-based variable importance measures (e.g., VIP) used elsewhere to guide downstream clustering. (C) Proportion of species models in which each variable's 95% credible interval was entirely positive (blue), entirely negative (red), or spanned zero (grey); variables with credible intervals spanning zero are not interpreted as having a consistent directional effect. Precipitation variables are notable for their low frequency, low rank, and high sign ambiguity relative to temperature and temperature variability predictors, suggesting these species are more strongly temperature-limited across their ranges.")}
-library(patchwork)
+```{r coef-panel, fig.width=9, fig.height=5, fig.cap=paste0("Summary of predictor variable selection and estimated effects across Bayesian habitat suitability models for ", n_distinct(coefs$species), " species. (A) Number of species for which each variable was retained as a predictor following forward feature selection. (B) Median rank of each variable by absolute posterior mean coefficient (|β|) within each species model, with interquartile range shown; rank reflects the directional contribution of each predictor to the linear component of the model. (C) Proportion of species models in which each variable's 95% credible interval was entirely positive (blue), entirely negative (red), or spanned zero (grey).")}
 
 bio_groups <- tibble::tribble(
   ~variable,  ~group,           ~label,
@@ -324,6 +328,7 @@ p1 <- coefs_ann |>
   scale_fill_manual(values = group_colors) +
   labs(x = "No. species", y = NULL, fill = NULL, title = "A. Frequency") +
   theme_minimal(base_size = 15) +
+  guides(fill="none") + 
   theme(legend.position = "none")
 
 # B: median rank by |estimate| within each species model
@@ -344,6 +349,7 @@ p2 <- coefs_ann |>
   scale_color_manual(values = group_colors) +
   labs(x = expression("Rank (|"*beta*"|)"), y = NULL, color = NULL, title = "B. Rank") +
   theme_minimal(base_size = 15) +
+  guides(color="none") + 
   theme(legend.position = "none", axis.text.y = element_blank())
 
 # C: proportion of species where coefficient is positive / negative / ambiguous
@@ -359,11 +365,65 @@ p3 <- coefs_ann |>
     breaks = c("positive", "negative", "ambiguous")
   ) +
   labs(x = "Proportion of species", y = NULL, fill = NULL, title = "C. Sign") +
+  scale_x_continuous(
+    labels = c(0, 0.25, 0.5, 0.75, 1.0),
+    breaks = c(0, 0.25, 0.5, 0.75, 1.0)
+  ) + 
   theme_minimal(base_size = 15) +
   theme(axis.text.y = element_blank())
 
-p1 + p2 + p3 + plot_layout(widths = c(1.3, 1, 1))
+p1 + p2 + p3 + plot_layout(widths = c(1.3, 1, 1), guides = "collect") &
+  theme(legend.position = "bottom")
 ```
+
+An online supplement of the modelling results is available at [Online](https://sagesteppe.github.io/safeHavens-Examples/).
+
+## Detailed Functionality 
+
+The isolation-by-resistance workflow is divided into three main phases to allow users to review, modify, and tailor intermediate objects. 
+Resistance surface rasters are created using `buildResistanceSurface`, followed by the sampling of these surfaces to create distance matrices via `populationResistance`. 
+Finally, the species range is clustered into groups with less resistance to movement within than between them using `IBRSurface`. 
+The polygons from `IBRSurface` are then submitted to the general sampling function `PolygonBasedSample` if more than one collection per group is desired. 
+`buildResistanceSurface` natively supports layers for oceans, lakes, rivers, topographic ruggedness, and a species distribution model’s probability surface, and also allows users to incorporate additional features and weights to parameterise the cost surface as desired. 
+Pairwise distances across the cost surface and between randomly sampled sites within the buffered species range are used to create a distance matrix for clustering in `populationResistance`. 
+Sampled locations are hierarchically clustered into n groups, and pixels within their buffered species ranges are iteratively assigned to each cluster using IBRSurface, with NbClust using the silhouette method [@nbclust2014charrard]. 
+
+The data preparation for the `EnvironmentalBasedSample` is compartmentalised into several functions, allowing users to review, modify, and save intermediate outputs. A species distribution model, using user-specific explanatory (raster format) supplemented with internally derived low-order PCNM surfaces - uncorrelated geospatial predictors that account for large-scale geospatial relations, with internal occurrence data thinning, pseudo-absence generation, geospatial cross-validation folds, and automatic variable selection using elastic net regression and recursive feature elimination, is prepared using `elasticSDM` [@naimi2016sdm; @aiello-lammens2015spthin; @meyer2025cast; @kuhn2008caret; @tay2023elasticnet; @oksanen2025vegan]. 
+Raster-based habitat suitability predictions are converted from probabilities to a binary presence/absence surface using a user-specified threshold metric.
+Areas of known occupancy are optionally ‘burned’ back onto this binary raster surface, resulting in a surface that maximises coverage of the species’ occupied habitat, using `PostProcessSDM` [@hijman2026terra; @hijman2024dismo]. 
+The environmental rasters, used as explanatory variables and included in the final SDM model, are rescaled based on their contributions (beta-coefficients) to the model to identify clusters of species ranges that share more similar relevant habitat characteristics, using `RescaleRasters`. 
+Results from these processes may then be saved using `writeSDMresults` The germplasm collection sample is implemented by `EnvironmentalBasedSample`, which samples and clusters n locations across the raster surface. 
+A k-nearest neighbour classifier is then trained on a relatively class-balanced resampling of these clusters, and geospatial clusters are identified using its predictions [@venables2002appstats]. 
+
+`KMedoidsBasedSample` is intended for use with species with up to a couple of hundred records, and maximises geographic coverage (by minimising the sum of geographic or environmental dissimilarities) across n collections by identifying individual populations to sample, while accounting for common data quality issues in occurrence data. 
+`KMedoidsBasedSample` is the only function in safeHavens that returns individual population-level data rather than generalised polygonal geometries for sampling. 
+From user-specified data, occurrence records that are to undergo coordinate jittering, as well as those that may undergo population dropout (due to misidentifications, conflicting taxonomy, or local extinction), are identified. 
+A user-specified number of bootstrap simulations permutes eligible sites, and updated distance matrices are repeatedly fed into K-medoids within each run; multiple restarts are allowed to minimise the solution cost at each iteration [@maechler2025cluster]. 
+Across all bootstrap iterations, each unique combination of candidate sites (set) is counted to identify the network of sites with the lowest cost (highest co-location strength), and the individual sites within this network are ordered by the number of times they were returned across all bootstrap simulations.
+
+The Bayesian approach to IBE largely performs the same steps as the `EnvironmentalBasedSample` and predictive Provenance workflow, with modifications to better incorporate uncertainty. 
+`bayesianSDM` its model fitting function wrapper, optionally performs forward rather than recursive feature selection, or generation of PCA axis for predictors, to identify performant variables before using `brms` with horseshoe priors to fit a model that includes a spline to reduce the effects of spatial autocorrelation of residuals on the interpretation of model parameters [@burkner2017brms; @rcoreteam2025r; @wood2003tps; @wood2017gam]. 
+The model posteriors, a rescaled raster stack `RescaleRastersBayes`, are then clustered via `PosteriorCuster` using sampling from the posterior draws. The consensus clustering results are identified via co-location, and the most stable results, alongside uncertainty estimates, are returned. 
+Predictive provenance functionality is supported with the `ProjectClusterBayes` function. 
+
+# eSTZwritR
+Empirical seed transfer zones (eSTZs) are gaining popularity among restoration practitioners as tools to identify the most appropriate seed source for a species at a restoration site [@mckay2005local]. 
+eSTZs are becoming more widely used for two primary reasons: 1) they are based on empirical data, such as phenotypes in a common garden, and 2) there are generally fewer zones than provisional seed transfer zones, thereby reducing the number of lineages that require cultivation in agricultural settings. 
+Although popular, developing eSTZs for a species is costly and time-consuming, often involving common gardens or genetic studies, with many populations from across the species' range incorporated as samples [@kramer2015assessing].   
+While practices for developing eSTZs are becoming more defined, to our knowledge, no standards exist for sharing eSTZ results (Supplemental 1). 
+Although eSTZs are produced by a handful of research groups, inconsistencies vary across the geospatial data products used to report and share eSTZs.
+
+The success of a restoration project depends on the timely application of techniques appropriate to the site. Hence, the dissemination of ideas during and after a restoration project is the best opportunity to improve restoration outcomes (Figure 1). 
+However, geospatial data are notoriously complex and difficult to transmit, historically requiring specialised software, and both written and geographic data (e.g., coordinates and their relationships) in the form of geospatial data products (e.g., rasters and shapefiles) to convey their meaning accurately. 
+Given the relative complexity of communicating precise geospatial information, standards should exist to ensure not only its accuracy and precision but also its ease of interpretation and use.
+
+## Software
+To make these suggestions easy to implement, we have created an R package, eSTZwritR (pronounced ‘easy rider’), that implements all of them, except for statistical processing, with minimal user input. 
+The package is available from GitHub (https://github.com/sagesteppe/eSTZwritR) and includes a GitHub Pages website (https://sagesteppe.github.io/eSTZwritR/) for users seeking a better understanding of its functionality, which provides supplemental figures and details not discussed here.
+
+The package requires only five functions to generate a directory containing the contents described above, with minimal data entry. 
+Most importantly, the entries are well-organised and easy to enter without requiring close attention to detail. 
+These results should allow for the simple utilization of existing empirical seed-transfer zone resources. This software was designed based on a review of the data sets (Appendix 1). 
 
 ## Discussion
 There is consensus among eSTZ developers on a range of attributes related to the distribution of data products. 
@@ -386,7 +446,6 @@ The second is the method used to develop the STZ - currently one of ‘g’, ‘
 In the United States, we recommend using the 12 Department of the Interior regions, as they cover contiguous geographic expanses, are few enough to be easily remembered, and balance L2 Omernik ecoregions with state lines that are easier to remember.  
 However, in other nations, the use of ecoregions may be more desirable.
  
-
 ### Maps 
 Maps of the data product should be included in the ‘Information’ directory. 
 Many questions about eSTZs can be answered quickly and simply by a practitioner consulting a PDF map with the essential cartographic components; fortunately, most developers already supply these. 
@@ -429,7 +488,6 @@ Several voices call for combining populations that are local in genetic or proje
 safeHavens helps stratify species ranges to accommodate the collection of material for any approach, whether geographic (e.g. `IsolationByDistance`), genetic (`IsolationByResistance`), or current (`EnvironmentalBasedSample` / `PosteriorCluster`) or future environmental space (`projectClusters` / `projectClustersBayes`).
 Indeed, while this release of safeHavens does not include restoration planting guidance, several recent studies have found that decoupling collection and restoration concepts may be beneficial to gather adequate source material when it is available [@barga2023not; @davidson2020spatial; @winkler2024matching; @st2022seedlot; @harrison2023assessment].
 
-
 # Conclusions
 Many opinions exist regarding the goals of restoration and germplasm conservation, as well as the suitability of various seed-sourcing strategies for restoration plantings [@vitt2022seed]. 
 Here we present free and open-source software and link to vignettes with well-documented workflows that aim to support the immediate goal of growing collections suitable for short- or long-term goals via safeHavens. 
@@ -451,9 +509,9 @@ The Bureau of Land Management for partially funding the development of these too
 Emily Woodworth for creating the ‘Dissemination’ figure. 
 Claude, from Anthropic, is acknowledged for assistance with coding development for portions of the safeHavens package.
  
-
 # Data Availability Statement
-All data used in the manuscript, those for the analyses in the eSTZwritR portion, are available at the publishers website.
+All data used for the analyses in the eSTZwritR portion, are available at https://github.com/sagesteppe/EmpiricalSeedZones.  
+
 
 \singlespacing 
 # Literature Cited
@@ -535,12 +593,9 @@ pf <- sign_bar(coefs_explore, "sign_80",   "F. Sign\nLiberal (0.80)",  show_y = 
 (pa / pb / pc) | (pd / pe / pf)
 ```
 
-**Figure SX.** Sensitivity of posterior coefficient sign classification to threshold choice, for all retained BIOCLIM predictors across `r n_distinct(coefs$species)` Bayesian habitat suitability models.
-Three thresholds are compared: strict (95% credible interval lies entirely above or below zero; A, D), relaxed (posterior probability of a directional effect > 90%; B, E), and liberal (> 80%; C, F), the latter being consistent with conventions common in land management.
+**Figure SX.** Sensitivity of posterior coefficient sign classification to threshold choice, for predictors across `r n_distinct(coefs$species)` habitat suitability models.
+Three thresholds are compared: strict (95% credible interval lies entirely above or below zero; A, D), relaxed (posterior probability of a directional effect > 90%; B, E), and liberal (> 80%; C, F), the latter consistent with conventions common in land management.
 Posterior probabilities are computed as P($\beta$ > 0) = Φ($\beta$^ / SE) under a normal posterior approximation.
-Points and bars are colored by sign classification: consistently positive (blue), consistently negative (red), or directionally ambiguous (grey).
-(A–C) Absolute posterior mean coefficient (|$\beta$|, log-scaled) against 95% credible interval width; the log transformation resolves the large range of coefficient magnitudes across predictors and species, with variables exerting greater influence on habitat suitability predictions appearing further to the right.
-Ambiguous coefficients cluster in the lower-left — small |$\beta$|, narrow-to-moderate CI — while directional coefficients occupy the right, forming a near-linear boundary that is the expected signature of horseshoe prior regularization shrinking weakly-supported predictors toward zero.
-(D–F) Proportion of species models in which each variable's coefficient was classified as positive, negative, or ambiguous under each threshold; variable ordering matches Figure X.
-The sign distribution is robust to threshold choice, supporting the strict 95% CI criterion used in the main text.
-
+(A–C) Absolute posterior mean coefficient (|$\beta$|, log-scaled) against credible interval widths.
+Ambiguous coefficients cluster in the lower-left — small |$\beta$|, narrow-to-moderate CI — while directional coefficients occupy the right, forming a linear boundary that is the expected signature of horseshoe prior regularization shrinking weakly-supported predictors toward zero.
+(D–F) Proportion of species models in which each variable's coefficient was classified as positive, negative, or ambiguous under each threshold.
