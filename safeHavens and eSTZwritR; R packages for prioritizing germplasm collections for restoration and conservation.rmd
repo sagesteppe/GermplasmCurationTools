@@ -29,6 +29,7 @@ header-includes:
 knitr::opts_chunk$set(echo=F,message=F,warning=F,comment = '')
 library(tidyverse)
 library(patchwork)
+library(sf)
 ```
 
 # Abstract
@@ -202,6 +203,7 @@ min `r min(occ_summary$n_presence)`, max `r scales::comma(max(occ_summary$n_pres
 Species, occurrence records in North America (within WGS84 longitude -48 to -170, latitude 24 to 85), were modelled using the Bayesian Predictive provenance workflow, using a planar projection of ESRI 102008. 
 Environmental predictors included all bioclim variables less: bio09 (excluded due to creating 'hard' surface borders in the Southeast), and the monthly values bio13, bio14, bio19 (which are largely redundant with seasonal metrics); historic and current data were from WorldClim2, and future data from CMIP6 [@hijman2026geodata; @fick2017worldclim; @swart2019canesm5]. 
 Absences were generated with a 1:2.5 ratio to presences per species, and all other parameters ran using default settings. 
+Claude, by Anthropic, was used for coding assistance in developing several functions, and all unit tests, for safeHavens. 
 
 ## eSTZwritR
 Using 23 sets of eSTZs produced for 22 taxa across the western United States, we showed that most of the geospatial data developed and disseminated to share eSTZ results are inconsistent (Supplemental 1). 
@@ -221,8 +223,14 @@ eval_metrics = readr::read_csv(
   show_col_types = F) |>
   janitor::clean_names()
 
+removed_species =   c(
+    'Lilium philadelphicum', 
+    'Comandra umbellata', 
+    'Luzula multiflora', 
+    'Calamagrostis canadensis'
+    )
 eval_metrics = eval_metrics |>
-  dplyr::filter(! species %in% c('Lilium philadelphicum'))
+  dplyr::filter(! species %in% removed_species)
 
 eval_m = eval_metrics |>
   summarise(
@@ -233,25 +241,81 @@ eval_m = eval_metrics |>
     )
 ```
 
-Two species were removed from evaluation due to substandard model performance, one *Lilium philadephicum* appeared to have taxonomically inconsistent applications, and difficulty in having enough 'wild' records for modelling (), the other *Luzula multiflora* also seems to have taxonomic inconsistences (AND CITE). 
+
+Four species were removed from evaluation due to substandard model performance, one *Lilium philadephicum* L. had too few records classified by 'GBIF' as being 'wild' (relative to cultivated) records records for modelling. 
+Others with very high occupancy across the extent of the terrestrial study area *Luzula multiflora* (Ehrh.) Lej.  *Calamagrostis canadensis* (Michx.) P. Beauv, and *Comandra umbellata* (L.) Nutt., had substandard results likely related to the generation of psuedo-absences for the trial study area.
+
 Evaluation metrics, computed using a standard 0.5 threshold for binarizing outcomes, are shown with the removal of these records. 
 Despite only allowing for the use of additive terms, models maintain highly performant with high balanced accuracy (min = `r round(eval_m$balanced_accuracy_min, 2)`, mean = `r round(eval_m$balanced_accuracy_mean, 2)`), and high F1 scores (the ability of the model to correctly identify true occurrence records; min = `r round(eval_m$f1_min, 2)`, mean = `r round(eval_m$f1_mean, 2)`).
 Models were able to identify presence records 'sensitivity' (min = `r round(eval_m$sensitivity_min, 2)`, mean = `r round(eval_m$sensitivity_mean, 2)`), while maintaining specificity in these classifications (min = `r round(eval_m$specificity_min, 2)`, mean = `r round(eval_m$specificity_mean, 2)`)
 
-```{r}
+```{r count of seed zones and sz overlapping cook county}
 lyr_names = sf::st_layers(file.path('data', 'all_cluster_geometries.gpkg'))
 ct_zones = lyr_names$features
+
+cook_county = tigris::counties(
+    state = 'Illinois', 
+    progress_bar = F, 
+    keep_zipped_shapefile = T
+    ) |>
+  filter(NAME == 'Cook') |>
+  select(geometry) |>
+  st_transform(4326)
+
+layer_list <- lapply(lyr_names$name, function(lyr) {
+  st_read(file.path('data', 'all_cluster_geometries.gpkg'), layer = lyr, quiet = TRUE)
+})
+names(layer_list) <- lyr_names$name
+
+select_overlaps <- function(x){
+  zones = nrow(x)
+  x = x[lengths(st_intersects(x, cook_county)) > 0,]
+
+  cook_county = st_transform(cook_county, 'ESRI:102008')
+  area_cc = units::set_units(
+    st_area(cook_county), 
+    ha
+  )
+
+  ## for each zone calculate it's total size
+  x = st_transform(x, "ESRI:102008")
+  x$total_zone_area = units::set_units(st_area(x), ha)
+
+  ## and the size of the overlapping portion
+  x$overlap_area = units::set_units(st_area(st_intersection(x, cook_county)), ha)
+  x$prop_overlap = as.numeric(x$overlap_area / area_cc)
+  st_drop_geometry(x)
+
+}
+
+## identify the zones overlapping cook county
+zones_intrsct = lapply(layer_list, select_overlaps)
+
+## count the number of provisional zones that overlap cook county
+current_intersections = sapply(zones_intrsct, nrow)
+
+do_overlap = current_intersections[which(current_intersections>0)]
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+## greater than 2.5% area is non-trivial # and given the raster clipping the lake
+## these may be an understatement. 
+zones_intrsct_df = bind_rows(zones_intrsct, .id = 'species')
 ```
 
 Of the `r nrow(eval_metrics)` modelled species the number of identified seed zones varied from (min = `r min(ct_zones)`, max = `r max(ct_zones)`, mean = `r round(mean(ct_zones), 2)`). 
-The number of eastern Provisional seed transfer zones entirely contained within these regions (US only) are: , and the average number of partially overlapping zones is: .
-XX of these are expected to have a change in seed zone between the current and SSP 4.5 projections in climate for the near future (2041-2060). 
+`r length(do_overlap)` of the modelled species had at least one seed zone overlapping Cook county in the current era, of these species the average number of overlapping seeds was `r round(mean(do_overlap), 2)`, (mode = `r Mode(do_overlap)`, max = `r max(do_overlap)`). 
+Of the `r nrow(zones_intrsct_df)` that overlap Cook County, at least `r sum(zones_intrsct_df$prop_overlap>0.025)` cover more than 2.5% of the county, and `r sum(zones_intrsct_df$prop_overlap>0.05)`, cover at least 5% of the county.
+The number of species that are expected to undergo a seed zone change between the current year and the near future (2041-2060) under SSP 4.5 projections is: 
 
-```{r}
+```{r coefficient data}
 coefs = read_csv(
   file.path('data','ManuscriptSummaries', 'beta_coefficients.csv'),
   show_col_types = F) |>
   janitor::clean_names()
+
 ```
 
 All uncertainty intervals reported for model coefficients are 95% Bayesian credible intervals (CIs), not frequentist confidence intervals.
@@ -357,6 +421,12 @@ p1 + p2 + p3 + plot_layout(widths = c(1.3, 1, 1), guides = "collect") &
 
 An online supplement of the modelling results is available [Online](https://sagesteppe.github.io/safeHavens-Examples/).
 
+```{r cleanup}
+rm(eval_m, coefs, zones_intrsct_df, lyr_names, cook_county, do_overlap, Mode, 
+select_overlaps, occ, group_colors, ct_zones, occ_summary, layer_list, var_order,
+current_intersections, p1, p2, p3, zones_intrsct, bio_groups, eval_metrics)
+```
+
 ## eSTZwritr Results
 ![(A) File Naming. Three inconsistencies in file names are discussed here, with the recommended data-sharing format in green and the least desirable condition in grey. (B) Field Names Shapefile. The three attributes of field names discussed here, with the most desirable condition in green, and the least desirable condition in grey. (C) Map Components (n = 20). Several essential cartographic elements - most notably a Title, a statement on data sources, and a legend for the seed zones - were missing from at least half, or nearly half, of the products inspected.](./figures/scored_data.png){width=50%}  
 
@@ -373,6 +443,9 @@ Surprisingly, within each shapefile, the field denoting the seed zones was often
 In several instances, it took several minutes to determine which field was the seed zone by toggling through and visualising many fields, despite our having already interfaced with all of these products multiple times.
 
 # Dicussion 
+
+## safeHavens
+The case study indicates that seed for species in Cook County can be sourced from a variety of locations in the Central Midwest in the current era. 
 
 ## eSTZwritR
 
@@ -466,7 +539,6 @@ Chris Woolridge https://orcid.org/0000-0002-2721-2092
 # Acknowledgements
 The Bureau of Land Management for partially funding the development of these tools through a contract with the Chicago Botanic Garden. 
 Emily Woodworth for creating the ‘Dissemination’ figure. 
-Claude, from Anthropic, is acknowledged for assistance with coding development for portions of the safeHavens package.
  
 # Data Availability Statement
 All data used for the analyses in the eSTZwritR portion, are available at https://github.com/sagesteppe/EmpiricalSeedZones.  
@@ -550,6 +622,14 @@ pf <- sign_bar(coefs_explore, "sign_80",   "F. Sign\nLiberal (0.80)",  show_y = 
   theme(legend.position = "bottom") + y_angle
 
 (pa / pb / pc) | (pd / pe / pf)
+
+
+rm(sign_colors, pa, pb, pc, pd, pe, pf, sign_bar, sign_plot, y_angle, coefs_explore, coefs_ann)
+```
+
+
+```{r}
+
 ```
 
 **Figure SX.** Sensitivity of posterior coefficient sign classification to threshold choice, for predictors across `r n_distinct(coefs$species)` habitat suitability models.
