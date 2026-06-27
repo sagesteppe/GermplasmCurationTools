@@ -25,7 +25,7 @@ header-includes:
 - \linenumbers
 ---
 
-```{r, setup options, echo=F,message=F}
+```{r setup options, echo=F,message=F}
 knitr::opts_chunk$set(echo=F,message=F,warning=F,comment = '')
 library(tidyverse)
 library(patchwork)
@@ -241,7 +241,6 @@ eval_m = eval_metrics |>
     )
 ```
 
-
 Four species were removed from evaluation due to substandard model performance, one *Lilium philadephicum* L. had too few records classified by 'GBIF' as being 'wild' (relative to cultivated) records records for modelling. 
 Others with very high occupancy across the extent of the terrestrial study area *Luzula multiflora* (Ehrh.) Lej.  *Calamagrostis canadensis* (Michx.) P. Beauv, and *Comandra umbellata* (L.) Nutt., had substandard results likely related to the generation of psuedo-absences for the trial study area.
 
@@ -250,6 +249,8 @@ Despite only allowing for the use of additive terms, models maintain highly perf
 Models were able to identify presence records 'sensitivity' (min = `r round(eval_m$sensitivity_min, 2)`, mean = `r round(eval_m$sensitivity_mean, 2)`), while maintaining specificity in these classifications (min = `r round(eval_m$specificity_min, 2)`, mean = `r round(eval_m$specificity_mean, 2)`)
 
 ```{r count of seed zones and sz overlapping cook county}
+
+### need to removed_species ###############!!!!!!!!
 lyr_names = sf::st_layers(file.path('data', 'all_cluster_geometries.gpkg'))
 ct_zones = lyr_names$features
 
@@ -308,14 +309,58 @@ zones_intrsct_df = bind_rows(zones_intrsct, .id = 'species')
 Of the `r nrow(eval_metrics)` modelled species the number of identified seed zones varied from (min = `r min(ct_zones)`, max = `r max(ct_zones)`, mean = `r round(mean(ct_zones), 2)`). 
 `r length(do_overlap)` of the modelled species had at least one seed zone overlapping Cook county in the current era, of these species the average number of overlapping seeds was `r round(mean(do_overlap), 2)`, (mode = `r Mode(do_overlap)`, max = `r max(do_overlap)`). 
 Of the `r nrow(zones_intrsct_df)` that overlap Cook County, at least `r sum(zones_intrsct_df$prop_overlap>0.025)` cover more than 2.5% of the county, and `r sum(zones_intrsct_df$prop_overlap>0.05)`, cover at least 5% of the county.
-The number of species that are expected to undergo a seed zone change between the current year and the near future (2041-2060) under SSP 4.5 projections is: 
+
+```{r species future descriptions}
+lyr_names_f = sf::st_layers(file.path('data', 'future_all_cluster_geometries.gpkg'))
+ct_zones_f = lyr_names_f$features
+
+layer_list_f <- lapply(lyr_names_f$name, function(lyr) {
+  st_read(file.path('data', 'future_all_cluster_geometries.gpkg'), layer = lyr, quiet = TRUE)
+})
+names(layer_list_f) <- lyr_names_f$name
+
+## identify the zones overlapping cook county
+zones_intrsct_f = lapply(layer_list_f, select_overlaps)
+
+## count the number of provisional zones that overlap cook county
+current_intersections_f = sapply(zones_intrsct_f, nrow)
+do_overlap_f = current_intersections_f[which(current_intersections_f>0)]
+zones_intrsct_df_f = bind_rows(zones_intrsct_f, .id = 'species')
+
+```
+
+For the same `r nrow(lyr_names_f)` species under the future time scenario the number of identified seed zones varied from (min = `r min(ct_zones_f)`, max = `r max(ct_zones_f)`, mean = `r round(mean(ct_zones_f), 2)`).
+`r length(do_overlap_f)` of the modelled species had at least one seed zone overlapping Cook county in the future era, of these species the average number of overlapping seeds was `r round(mean(do_overlap_f), 2)`, (mode = `r Mode(do_overlap_f)`, max = `r max(do_overlap_f)`). 
+Of the `r nrow(zones_intrsct_df_f)` that overlap Cook County, at least `r sum(zones_intrsct_df_f$prop_overlap>0.025)` cover more than 2.5% of the county, and `r sum(zones_intrsct_df_f$prop_overlap>0.05)`, cover at least 5% of the county.
+
+```{r seed zone change}
+zones_intrsct_df = zones_intrsct_df |>
+  rename_with(~str_c("cur_", .), c('total_zone_area', 'overlap_area', 'prop_overlap'))
+zones_intrsct_df_f = zones_intrsct_df_f |>
+  rename_with(~str_c("fut_", .), c('total_zone_area', 'overlap_area', 'prop_overlap'))
+
+ttl_zones = bind_rows(zones_intrsct_df, zones_intrsct_df_f) |>
+  distinct(species, ID) |>
+  nrow()
+
+shared <- inner_join(zones_intrsct_df, zones_intrsct_df_f, by = c('species', 'ID')) |>
+  mutate(pct_change = (
+    (fut_overlap_area - cur_overlap_area) /
+      cur_overlap_area ) * 100 ) |>
+     # very large differences...
+    # report median and 80th percentile
+  mutate()
+
+shared$pct_change
+```
+
+Of the `r ttl_zones` unique seed zones that overlap Cook County under both time periods, `r nrow(shared)` of them are shared across time periods, while the future time introduces `r ttl_zones - nrow(shared)` zones new to the region.
 
 ```{r coefficient data}
 coefs = read_csv(
   file.path('data','ManuscriptSummaries', 'beta_coefficients.csv'),
   show_col_types = F) |>
   janitor::clean_names()
-
 ```
 
 All uncertainty intervals reported for model coefficients are 95% Bayesian credible intervals (CIs), not frequentist confidence intervals.
@@ -422,7 +467,7 @@ p1 + p2 + p3 + plot_layout(widths = c(1.3, 1, 1), guides = "collect") &
 An online supplement of the modelling results is available [Online](https://sagesteppe.github.io/safeHavens-Examples/).
 
 ```{r cleanup}
-rm(eval_m, coefs, zones_intrsct_df, lyr_names, cook_county, do_overlap, Mode, 
+rm(eval_m, zones_intrsct_df, lyr_names, cook_county, do_overlap, Mode, 
 select_overlaps, occ, group_colors, ct_zones, occ_summary, layer_list, var_order,
 current_intersections, p1, p2, p3, zones_intrsct, bio_groups, eval_metrics)
 ```
@@ -625,11 +670,6 @@ pf <- sign_bar(coefs_explore, "sign_80",   "F. Sign\nLiberal (0.80)",  show_y = 
 
 
 rm(sign_colors, pa, pb, pc, pd, pe, pf, sign_bar, sign_plot, y_angle, coefs_explore, coefs_ann)
-```
-
-
-```{r}
-
 ```
 
 **Figure SX.** Sensitivity of posterior coefficient sign classification to threshold choice, for predictors across `r n_distinct(coefs$species)` habitat suitability models.
