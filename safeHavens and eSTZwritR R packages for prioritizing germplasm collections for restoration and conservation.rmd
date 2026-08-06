@@ -7,9 +7,9 @@ author: "| Reed Clark Benkendorf$^1{1,2}$, Jeremie B. Fant$^{1,2}$, Sophie Tadde
   Illinois 60022 USA  \n $^3$ Department of Environmental and Ocean Sciences, University
   of San Diego, San Diego, California 92110, USA"
 output:
-  word_document
-  #pdf_document:
-  #  latex_engine: xelatex
+  #word_document
+  pdf_document:
+    latex_engine: xelatex
   #html_document:
   #  df_print: paged
   #toc: false

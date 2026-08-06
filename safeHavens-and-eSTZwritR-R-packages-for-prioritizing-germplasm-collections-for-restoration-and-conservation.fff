@@ -1,0 +1,56 @@
+\begin{figure}
+\centering
+\includegraphics[width=0.75\linewidth,height=\textheight,keepaspectratio,alt={'Dissemination` depicts the essential component of developing a curated collection that communicates priority areas to collector crews for more targeted collection. These activities support the potential for increases in agricultural or propagative production of collected germplasm and the selection of materials for restoration plantings. safeHavens can be used to guide eSTZ study collections, while both packages are used for dissemination, collections, and restoration. By Emily Woodworth.}]{safeHavens-and-eSTZwritR-R-packages-for-prioritizing-germplasm-collections-for-restoration-and-conservation_files/figures/Wu-naut.jpg}
+\caption{'Dissemination` depicts the essential component of developing a
+curated collection that communicates priority areas to collector crews
+for more targeted collection. These activities support the potential for
+increases in agricultural or propagative production of collected
+germplasm and the selection of materials for restoration plantings.
+safeHavens can be used to guide eSTZ study collections, while both
+packages are used for dissemination, collections, and restoration. By
+Emily Woodworth.}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={Summary of predictor variable selection and estimated effects across Bayesian habitat suitability models for 52 species. (A) Number of species for which each variable was retained as a predictor following forward feature selection. (B) Median rank of each variable by absolute posterior mean coefficient (\textbar β\textbar) within each species model, with interquartile range shown; rank reflects the directional contribution of each predictor to the linear component of the model. (C) Proportion of species models in which each variable's 95\% credible interval was entirely positive (blue), entirely negative (red), or spanned zero (grey).}]{safeHavens-and-eSTZwritR-R-packages-for-prioritizing-germplasm-collections-for-restoration-and-conservation_files/safeHavens-and-eSTZwritR-R-packages-for-prioritizing-germplasm-collections-for-restoration-and-conservation_files/figure-latex/coef-panel-1.pdf}}
+\caption{Summary of predictor variable selection and estimated effects
+across Bayesian habitat suitability models for 52 species. (A) Number of
+species for which each variable was retained as a predictor following
+forward feature selection. (B) Median rank of each variable by absolute
+posterior mean coefficient (\textbar β\textbar) within each species
+model, with interquartile range shown; rank reflects the directional
+contribution of each predictor to the linear component of the model. (C)
+Proportion of species models in which each variable's 95\% credible
+interval was entirely positive (blue), entirely negative (red), or
+spanned zero (grey).}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics[width=0.5\linewidth,height=\textheight,keepaspectratio,alt={(A) File Naming. Three inconsistencies in file names are discussed here, with the recommended data-sharing format in green and the least desirable condition in grey. (B) Field Names Shapefile. The three attributes of field names are discussed here, with the most desirable condition in green, and the least desirable condition in red. (C) Map Components (n = 20). Several essential cartographic elements - most notably a Title, a statement on data sources, and a legend for the seed zones - were missing from at least half, or nearly half, of the products inspected.}]{safeHavens-and-eSTZwritR-R-packages-for-prioritizing-germplasm-collections-for-restoration-and-conservation_files/figures/scored_data.png}
+\caption{(A) File Naming. Three inconsistencies in file names are
+discussed here, with the recommended data-sharing format in green and
+the least desirable condition in grey. (B) Field Names Shapefile. The
+three attributes of field names are discussed here, with the most
+desirable condition in green, and the least desirable condition in red.
+(C) Map Components (n = 20). Several essential cartographic elements -
+most notably a Title, a statement on data sources, and a legend for the
+seed zones - were missing from at least half, or nearly half, of the
+products inspected.}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics[width=0.5\linewidth,height=\textheight,keepaspectratio,alt={(A) Directory Structure. Each directory is named in yellow and spans the extent of variously coloured polygons. Individual files (or a set of files in the case of a shapefile) are depicted in black text within these directories. (B) File Naming. The four proposed components of a filename are highlighted in different colours and with appropriate cases. (C) Vector Data Field Attributes. The proposed field names for distributing vector data.}]{safeHavens-and-eSTZwritR-R-packages-for-prioritizing-germplasm-collections-for-restoration-and-conservation_files/figures/suggestions.png}
+\caption{(A) Directory Structure. Each directory is named in yellow and
+spans the extent of variously coloured polygons. Individual files (or a
+set of files in the case of a shapefile) are depicted in black text
+within these directories. (B) File Naming. The four proposed components
+of a filename are highlighted in different colours and with appropriate
+cases. (C) Vector Data Field Attributes. The proposed field names for
+distributing vector data.}
+\end{figure}

@@ -261,6 +261,7 @@ lyr_names = sf::st_layers(file.path('data', 'all_cluster_geometries.gpkg'))
 lyr_names = lyr_names[ !lyr_names$name %in%  str_replace(removed_species, ' ', '_'),]
 ct_zones = lyr_names$features
 
+?tigris::states
 dntp_states = tigris::states(progress_bar = F) |>
   filter(STUSPS %in% c('IA', 'IL', 'IN', 'KS', 'MI', 'MO', 'MN', 'NE', 'WI')) |>
   summarize(geometry = st_union(geometry))|>
